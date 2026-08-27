@@ -12,10 +12,11 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="Second Coworker API")
 
-# Vite's default dev server port. Update if the frontend port changes.
+# Pinned in frontend/vite.config.js (see comment there for why it's not
+# the 5173 default). Update both together if the frontend port changes.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["http://localhost:5175"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
