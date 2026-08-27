@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSpeechTranscript } from '../hooks/useSpeechTranscript.js'
 import { saveSession, saveTasks } from '../api.js'
-import { extractTask } from '../wakePhrase.js'
+import { findAllWakePhraseMatches } from '../wakePhrase.js'
 
 // Milestone 1 gave us the live transcript, Milestone 2 saves the session.
 // Milestone 3 ("tasks work") adds this: wake-phrase detection runs live,
@@ -10,27 +10,33 @@ import { extractTask } from '../wakePhrase.js'
 // Matches populate the task tray immediately; the tray is only POSTed to
 // the backend once, at End Session, alongside the transcript.
 export default function LiveSession({ onEnd }) {
-  const { isSupported, isListening, finalText, interimText, error, start, stop } = useSpeechTranscript()
+  const { isSupported, isListening, finalText, finalSegments, interimText, error, start, stop } =
+    useSpeechTranscript()
   const [tasks, setTasks] = useState([])
   const [saveState, setSaveState] = useState('idle') // idle | saving | error
-  const processedLenRef = useRef(0)
+  // Match start offsets (within the '\n'-joined segments text) already
+  // turned into a task — see wakePhrase.js for why re-scanning everything
+  // and deduping by offset is what actually handles a phrase split across
+  // two finalized chunks without also risking duplicates or runaway captures.
+  const seenMatchStartsRef = useRef(new Set())
 
   useEffect(() => {
     if (isSupported) start()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSupported])
 
-  // Only scan the newly-appended slice of finalText, not the whole
-  // transcript every time — otherwise an already-matched phrase would
-  // re-fire a new task on every subsequent onresult event.
   useEffect(() => {
-    const newSegment = finalText.slice(processedLenRef.current)
-    processedLenRef.current = finalText.length
-    if (!newSegment.trim()) return
-
-    const task = extractTask(newSegment)
-    if (task) setTasks((prev) => [...prev, task])
-  }, [finalText])
+    if (finalSegments.length === 0) return
+    const joined = finalSegments.join('\n')
+    const newTasks = []
+    for (const match of findAllWakePhraseMatches(joined)) {
+      if (!seenMatchStartsRef.current.has(match.start)) {
+        seenMatchStartsRef.current.add(match.start)
+        newTasks.push(match.task)
+      }
+    }
+    if (newTasks.length > 0) setTasks((prev) => [...prev, ...newTasks])
+  }, [finalSegments])
 
   const handleEnd = async () => {
     stop()

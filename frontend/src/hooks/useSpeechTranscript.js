@@ -10,6 +10,13 @@ export function useSpeechTranscript() {
   )
   const [isListening, setIsListening] = useState(false)
   const [finalText, setFinalText] = useState('')
+  // Each entry is one raw finalized chunk from the recognizer, in arrival
+  // order — undivided, never edited after being appended. Exposed
+  // separately from finalText so wake-phrase matching (LiveSession) can
+  // scan discrete chunks instead of diffing an ever-growing string, which
+  // both misses phrases split across a chunk boundary and, worse, lets an
+  // unbounded regex capture group swallow unrelated future speech.
+  const [finalSegments, setFinalSegments] = useState([])
   const [interimText, setInterimText] = useState('')
   const [error, setError] = useState(null)
 
@@ -30,18 +37,19 @@ export function useSpeechTranscript() {
 
     recognition.onresult = (event) => {
       let interim = ''
-      let finalChunk = ''
+      const newFinals = []
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i]
         if (result.isFinal) {
-          finalChunk += result[0].transcript + ' '
+          newFinals.push(result[0].transcript.trim())
         } else {
           interim += result[0].transcript
         }
       }
-      if (finalChunk) {
-        finalTextRef.current = (finalTextRef.current + finalChunk)
+      if (newFinals.length > 0) {
+        finalTextRef.current = finalTextRef.current + newFinals.join(' ') + ' '
         setFinalText(finalTextRef.current)
+        setFinalSegments((prev) => [...prev, ...newFinals])
       }
       setInterimText(interim)
     }
@@ -82,6 +90,7 @@ export function useSpeechTranscript() {
     setError(null)
     finalTextRef.current = ''
     setFinalText('')
+    setFinalSegments([])
     setInterimText('')
     wantListeningRef.current = true
     setIsListening(true)
@@ -95,5 +104,5 @@ export function useSpeechTranscript() {
     setIsListening(false)
   }, [])
 
-  return { isSupported, isListening, finalText, interimText, error, start, stop }
+  return { isSupported, isListening, finalText, finalSegments, interimText, error, start, stop }
 }
