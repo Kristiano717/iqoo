@@ -1,7 +1,11 @@
 // Single place for the backend base URL — avoids hardcoding it in every
-// screen. Change here (and in backend/main.py's CORS allowlist) if the
-// backend port ever moves off 8000.
-const API_BASE = 'http://localhost:8000'
+// screen. Port 8001, not FastAPI/uvicorn's 8000 default: a prior dev
+// server left Windows in a stuck state on 8000 (two PIDs simultaneously
+// LISTENING per netstat, neither killable, neither a live process per
+// Get-Process — stale kernel-level TCP state, not an app bug). Moved off
+// it rather than debug OS socket internals. Keep this in sync with the
+// `uvicorn main:app --port 8001` command backend is started with.
+const API_BASE = 'http://localhost:8001'
 
 export async function saveSession(transcript) {
   const res = await fetch(`${API_BASE}/sessions`, {
