@@ -1,14 +1,19 @@
 """Second Coworker — FastAPI backend entrypoint.
 
-Milestone 1 ("transcript works") is browser-only per CLAUDE.md — live
+Milestone 1 ("transcript works") was browser-only per CLAUDE.md — live
 transcription and wake-phrase detection both run client-side with no
-server round-trip. So this backend currently exposes nothing but a health
-check; real endpoints (save session, generate summary, recall) get added
-starting Milestone 2 ("save works").
+server round-trip. Milestone 2 ("save works") adds the first real
+endpoint: persisting the end-of-session transcript to Supabase. Summary
+generation (Milestone 4) and recall (Milestone 5) still aren't wired up.
 """
 
-from fastapi import FastAPI
+from datetime import datetime, timezone
+
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+
+from db import get_client
 
 app = FastAPI(title="Second Coworker API")
 
@@ -25,3 +30,25 @@ app.add_middleware(
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+class SaveSessionRequest(BaseModel):
+    transcript: str
+
+
+@app.post("/sessions")
+def save_session(body: SaveSessionRequest):
+    # summary is left null here on purpose — Milestone 4 fills it in via a
+    # separate call once the end-of-session LLM summary exists.
+    row = {
+        "transcript": body.transcript,
+        "summary": None,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+    try:
+        result = get_client().table("sessions").insert(row).execute()
+    except Exception as exc:  # Supabase/network errors — surface plainly, don't guess.
+        raise HTTPException(status_code=502, detail=f"Failed to save session: {exc}")
+
+    saved = result.data[0]
+    return {"id": saved["id"], "timestamp": saved["timestamp"]}

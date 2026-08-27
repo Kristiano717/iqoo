@@ -9,10 +9,10 @@ import Recall from './screens/Recall.jsx'
 // dependency (CLAUDE.md: avoid unnecessary abstractions).
 export default function App() {
   const [screen, setScreen] = useState('home')
-  const [transcript, setTranscript] = useState('')
+  const [session, setSession] = useState({ transcript: '', sessionId: null, saveError: null })
 
-  const handleSessionEnd = (finalTranscript) => {
-    setTranscript(finalTranscript)
+  const handleSessionEnd = (result) => {
+    setSession(result)
     setScreen('summary')
   }
 
@@ -20,7 +20,7 @@ export default function App() {
     <div className="app-shell">
       {screen === 'home' && <Home onStart={() => setScreen('live')} />}
       {screen === 'live' && <LiveSession onEnd={handleSessionEnd} />}
-      {screen === 'summary' && <Summary transcript={transcript} onRestart={() => setScreen('home')} />}
+      {screen === 'summary' && <Summary session={session} onRestart={() => setScreen('home')} />}
       {screen === 'recall' && <Recall onBack={() => setScreen('home')} />}
     </div>
   )
