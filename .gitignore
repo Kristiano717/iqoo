@@ -1,0 +1,18 @@
+# Node / frontend
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Python / backend
+backend/venv/
+backend/__pycache__/
+**/__pycache__/
+*.pyc
+
+# Env secrets
+.env
+backend/.env
+
+# OS / editor
+.DS_Store
+.vscode/

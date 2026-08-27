@@ -1,0 +1,111 @@
+:root {
+  color-scheme: light;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #f5f6f8;
+  color: #1a1a1a;
+}
+
+.app-shell {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+  min-height: 100vh;
+}
+
+.screen h1 {
+  font-size: 1.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.screen p.subtitle {
+  color: #666;
+  margin-top: 0;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border: none;
+  border-radius: 8px;
+  padding: 0.6rem 1.2rem;
+  background: #1a1a1a;
+  color: #fff;
+}
+
+button:disabled {
+  background: #aaa;
+  cursor: not-allowed;
+}
+
+button.secondary {
+  background: transparent;
+  color: #1a1a1a;
+  border: 1px solid #ccc;
+}
+
+.transcript-box {
+  margin-top: 1.5rem;
+  min-height: 240px;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 1rem;
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+
+.transcript-box .interim {
+  color: #999;
+}
+
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ccc;
+}
+
+.status-dot.live {
+  background: #e0392b;
+  box-shadow: 0 0 0 4px rgba(224, 57, 43, 0.15);
+}
+
+.error-banner {
+  margin-top: 1rem;
+  background: #fff4f4;
+  border: 1px solid #f3caca;
+  color: #a12a2a;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.controls-row {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.placeholder-note {
+  margin-top: 2rem;
+  padding: 1rem;
+  border: 1px dashed #ccc;
+  border-radius: 8px;
+  color: #777;
+  font-size: 0.9rem;
+}
