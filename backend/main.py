@@ -2,8 +2,10 @@
 
 Milestone 1 ("transcript works") was browser-only per CLAUDE.md — live
 transcription and wake-phrase detection both run client-side with no
-server round-trip. Milestone 2 ("save works") adds the first real
-endpoint: persisting the end-of-session transcript to Supabase. Summary
+server round-trip. Milestone 2 ("save works") added session persistence.
+Milestone 3 ("tasks work") adds task persistence: wake-phrase hits are
+still detected live in the browser (no server round-trip during the
+session), the tray is just POSTed here once, at End Session. Summary
 generation (Milestone 4) and recall (Milestone 5) still aren't wired up.
 """
 
@@ -52,3 +54,22 @@ def save_session(body: SaveSessionRequest):
 
     saved = result.data[0]
     return {"id": saved["id"], "timestamp": saved["timestamp"]}
+
+
+class SaveTasksRequest(BaseModel):
+    tasks: list[str]
+
+
+@app.post("/sessions/{session_id}/tasks")
+def save_tasks(session_id: str, body: SaveTasksRequest):
+    if not body.tasks:
+        return {"saved": 0}
+
+    now = datetime.now(timezone.utc).isoformat()
+    rows = [{"session_id": session_id, "text": t, "timestamp": now} for t in body.tasks]
+    try:
+        result = get_client().table("tasks").insert(rows).execute()
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Failed to save tasks: {exc}")
+
+    return {"saved": len(result.data)}

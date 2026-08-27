@@ -1,19 +1,36 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useSpeechTranscript } from '../hooks/useSpeechTranscript.js'
-import { saveSession } from '../api.js'
+import { saveSession, saveTasks } from '../api.js'
+import { extractTask } from '../wakePhrase.js'
 
-// Milestone 1 ("transcript works") gave us the live transcript. Milestone 2
-// ("save works") adds this: on End Session, POST the transcript to the
-// backend so it lands in Supabase's `sessions` table. Wake-phrase/task tray
-// is still the next milestone after this — deliberately not here yet.
+// Milestone 1 gave us the live transcript, Milestone 2 saves the session.
+// Milestone 3 ("tasks work") adds this: wake-phrase detection runs live,
+// client-side, on each newly-finalized transcript chunk (still just a
+// regex match per CLAUDE.md — no second AI model running continuously).
+// Matches populate the task tray immediately; the tray is only POSTed to
+// the backend once, at End Session, alongside the transcript.
 export default function LiveSession({ onEnd }) {
   const { isSupported, isListening, finalText, interimText, error, start, stop } = useSpeechTranscript()
+  const [tasks, setTasks] = useState([])
   const [saveState, setSaveState] = useState('idle') // idle | saving | error
+  const processedLenRef = useRef(0)
 
   useEffect(() => {
     if (isSupported) start()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSupported])
+
+  // Only scan the newly-appended slice of finalText, not the whole
+  // transcript every time — otherwise an already-matched phrase would
+  // re-fire a new task on every subsequent onresult event.
+  useEffect(() => {
+    const newSegment = finalText.slice(processedLenRef.current)
+    processedLenRef.current = finalText.length
+    if (!newSegment.trim()) return
+
+    const task = extractTask(newSegment)
+    if (task) setTasks((prev) => [...prev, task])
+  }, [finalText])
 
   const handleEnd = async () => {
     stop()
@@ -21,12 +38,18 @@ export default function LiveSession({ onEnd }) {
     setSaveState('saving')
     try {
       const saved = await saveSession(transcript)
-      onEnd({ transcript, sessionId: saved.id })
+      try {
+        await saveTasks(saved.id, tasks)
+      } catch (taskErr) {
+        // Session saved fine; tasks failed. Still hand off to Summary
+        // rather than losing the saved session over a secondary failure.
+        onEnd({ transcript, sessionId: saved.id, tasks, taskSaveError: taskErr.message })
+        return
+      }
+      onEnd({ transcript, sessionId: saved.id, tasks })
     } catch (err) {
-      // Don't strand the user on a broken save — let them continue to the
-      // Summary screen with the transcript still in hand, just unsaved.
       setSaveState('error')
-      onEnd({ transcript, sessionId: null, saveError: err.message })
+      onEnd({ transcript, sessionId: null, tasks, saveError: err.message })
     }
   }
 
@@ -55,6 +78,21 @@ export default function LiveSession({ onEnd }) {
       </div>
 
       {error && <div className="error-banner">Speech recognition error: {error}</div>}
+
+      <h2 style={{ fontSize: '1.1rem', marginTop: '1.5rem', marginBottom: '0.5rem' }}>
+        Task Tray {tasks.length > 0 && `(${tasks.length})`}
+      </h2>
+      {tasks.length === 0 ? (
+        <p style={{ color: '#999', margin: 0 }}>
+          Say "Hey Coworker, remind me to…" to capture a task.
+        </p>
+      ) : (
+        <ul style={{ paddingLeft: '1.25rem', margin: 0 }}>
+          {tasks.map((t, i) => (
+            <li key={i}>{t}</li>
+          ))}
+        </ul>
+      )}
 
       <div className="controls-row">
         <button onClick={handleEnd} disabled={saveState === 'saving'}>

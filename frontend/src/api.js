@@ -15,3 +15,17 @@ export async function saveSession(transcript) {
   }
   return res.json() // { id, timestamp }
 }
+
+export async function saveTasks(sessionId, tasks) {
+  if (tasks.length === 0) return { saved: 0 }
+  const res = await fetch(`${API_BASE}/sessions/${sessionId}/tasks`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tasks }),
+  })
+  if (!res.ok) {
+    const body = await res.text()
+    throw new Error(`Task save failed (${res.status}): ${body}`)
+  }
+  return res.json() // { saved }
+}
