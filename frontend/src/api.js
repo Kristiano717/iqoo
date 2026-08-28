@@ -47,3 +47,16 @@ export async function summarizeSession(sessionId) {
   }
   return res.json() // { summary, tasks, facts }
 }
+
+export async function askRecall(question) {
+  const res = await fetch(`${API_BASE}/recall`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ question }),
+  })
+  if (!res.ok) {
+    const body = await res.text()
+    throw new Error(`Recall failed (${res.status}): ${body}`)
+  }
+  return res.json() // { answer, sessions_searched }
+}

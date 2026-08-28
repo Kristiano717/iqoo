@@ -4,8 +4,8 @@ Milestone 1 ("transcript works") was browser-only per CLAUDE.md — live
 transcription and wake-phrase detection both run client-side with no
 server round-trip. Milestone 2 ("save works") added session persistence.
 Milestone 3 ("tasks work") added task persistence. Milestone 4 ("summary
-works") adds the single end-of-session LLM call. Recall (Milestone 5)
-still isn't wired up.
+works") added the single end-of-session LLM call. Milestone 5 ("recall
+works") adds cross-session memory recall — the last piece of the loop.
 """
 
 from datetime import datetime, timezone
@@ -14,8 +14,13 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from ai import generate_summary
+from ai import answer_recall, generate_summary
 from db import get_client
+
+# How many past sessions to pull into the recall context. Retrieval is by
+# recency only — no vector search, no embeddings (CLAUDE.md). A small,
+# fixed window keeps the prompt bounded and the demo deterministic.
+RECALL_SESSION_LIMIT = 10
 
 app = FastAPI(title="Second Coworker API")
 
@@ -107,3 +112,40 @@ def summarize_session(session_id: str):
         raise HTTPException(status_code=502, detail=f"Failed to save summary: {exc}")
 
     return extracted
+
+
+class RecallRequest(BaseModel):
+    question: str
+
+
+@app.post("/recall")
+def recall(body: RecallRequest):
+    question = body.question.strip()
+    if not question:
+        raise HTTPException(status_code=400, detail="Question is empty.")
+
+    try:
+        result = (
+            get_client()
+            .table("sessions")
+            .select("summary,facts,timestamp")
+            # Only summarized sessions are useful context — a row whose
+            # summary is still null was never run through extraction.
+            .not_.is_("summary", "null")
+            .order("timestamp", desc=True)
+            .limit(RECALL_SESSION_LIMIT)
+            .execute()
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Failed to retrieve past sessions: {exc}")
+
+    # Retrieved newest-first (so the limit keeps the most recent), but
+    # reversed for the prompt so the model reads them oldest-to-newest.
+    sessions = list(reversed(result.data))
+
+    try:
+        answer = answer_recall(question, sessions)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Recall failed: {exc}")
+
+    return {"answer": answer, "sessions_searched": len(sessions)}

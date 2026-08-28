@@ -101,6 +101,41 @@ button.secondary {
   margin-top: 1.5rem;
 }
 
+.recall-form {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.recall-form input {
+  flex: 1;
+  font: inherit;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: #fff;
+  color: inherit;
+}
+
+.recall-form input:focus {
+  outline: 2px solid #1a1a1a;
+  outline-offset: -1px;
+}
+
+.recall-answer {
+  margin-top: 1.5rem;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 1rem;
+}
+
+.recall-meta {
+  margin: 0.75rem 0 0;
+  color: #999;
+  font-size: 0.85rem;
+}
+
 .placeholder-note {
   margin-top: 2rem;
   padding: 1rem;

@@ -5,7 +5,7 @@ import { summarizeSession } from '../api.js'
 // LLM extraction once this screen mounts. Kept here rather than in
 // LiveSession — that screen's job ends at persisting the raw session +
 // wake-phrase tasks; turning that into an AI summary is this screen's job.
-export default function Summary({ session, onRestart }) {
+export default function Summary({ session, onRestart, onRecall }) {
   const { transcript, sessionId, tasks: liveTasks = [], saveError, taskSaveError } = session
   const [aiState, setAiState] = useState(sessionId ? 'loading' : 'skipped') // loading | done | error | skipped
   const [aiResult, setAiResult] = useState(null)
@@ -100,6 +100,7 @@ export default function Summary({ session, onRestart }) {
 
       <div className="controls-row">
         <button className="secondary" onClick={onRestart}>Back to Home</button>
+        <button className="secondary" onClick={onRecall}>Ask About Past Sessions</button>
       </div>
     </div>
   )

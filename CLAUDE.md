@@ -61,7 +61,14 @@ Keep responsibilities separated. Don't create new top-level folders without a re
 | id | UUID |
 | transcript | text |
 | summary | text |
+| facts | jsonb (array of strings) |
 | timestamp | datetime |
+
+> `facts` was added during Milestone 4 with explicit sign-off — it wasn't in
+> the original locked schema. The extraction call returns a `facts` array,
+> and the only alternative was flattening it into the `summary` prose, which
+> throws away exactly the structure this product is betting on. Recall reads
+> both `summary` and `facts`.
 
 **tasks**
 

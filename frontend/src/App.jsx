@@ -18,9 +18,17 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      {screen === 'home' && <Home onStart={() => setScreen('live')} />}
+      {screen === 'home' && (
+        <Home onStart={() => setScreen('live')} onRecall={() => setScreen('recall')} />
+      )}
       {screen === 'live' && <LiveSession onEnd={handleSessionEnd} />}
-      {screen === 'summary' && <Summary session={session} onRestart={() => setScreen('home')} />}
+      {screen === 'summary' && (
+        <Summary
+          session={session}
+          onRestart={() => setScreen('home')}
+          onRecall={() => setScreen('recall')}
+        />
+      )}
       {screen === 'recall' && <Recall onBack={() => setScreen('home')} />}
     </div>
   )
