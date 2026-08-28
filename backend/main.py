@@ -75,17 +75,6 @@ def save_tasks(session_id: str, body: SaveTasksRequest):
     return {"saved": len(result.data)}
 
 
-def _compose_stored_summary(summary: str, facts: list[str]) -> str:
-    # sessions.summary is the ONLY column the locked schema gives this data
-    # a home in — no separate facts table/column (see CLAUDE.md's Database
-    # Schema section). Facts get folded in here so recall (Milestone 5),
-    # which only ever reads sessions.summary, can still see them.
-    if not facts:
-        return summary
-    facts_block = "\n".join(f"- {f}" for f in facts)
-    return f"{summary}\n\nKey facts:\n{facts_block}"
-
-
 @app.post("/sessions/{session_id}/summarize")
 def summarize_session(session_id: str):
     try:
@@ -102,12 +91,19 @@ def summarize_session(session_id: str):
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"AI summary generation failed: {exc}")
 
-    stored_summary = _compose_stored_summary(extracted["summary"], extracted["facts"])
+    # summary and facts are stored in their own columns — facts keep their
+    # structure rather than being flattened into prose, which is the whole
+    # point of the "structured memory objects" differentiator. Recall
+    # (Milestone 5) reads both.
     try:
-        get_client().table("sessions").update({"summary": stored_summary}).eq("id", session_id).execute()
+        (
+            get_client()
+            .table("sessions")
+            .update({"summary": extracted["summary"], "facts": extracted["facts"]})
+            .eq("id", session_id)
+            .execute()
+        )
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Failed to save summary: {exc}")
 
-    # Return the structured pieces (not the flattened stored text) so the
-    # frontend can render summary/tasks/facts as distinct sections.
     return extracted
