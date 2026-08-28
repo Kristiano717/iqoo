@@ -7,8 +7,20 @@
 // finalized transcript chunks with '\n' (see LiveSession), so the task
 // text can never bleed past the chunk it was spoken in, no matter how
 // much more gets said afterwards.
-const WAKE_PHRASE_RE = /hey\s+coworker,?\s+remind me to\s+([^\n]+)/i
-const WAKE_PHRASE_RE_GLOBAL = /hey\s+coworker,?\s+remind me to\s+([^\n]+)/gi
+// Built loose on purpose. The Web Speech API decides its own spelling and
+// punctuation, and it renders this phrase inconsistently — "coworker",
+// "co-worker" and "co worker" all show up, as do stray commas ("Hey,
+// coworker, remind me..."). A strict pattern silently captures nothing,
+// which during a live demo looks like the whole feature is broken. Each
+// piece below absorbs one of those variations:
+//   hey[,]?          - optional comma after the greeting
+//   co[-\s]?worker   - the three spellings the recognizer produces
+//   (?:please\s+)?   - "hey coworker, please remind me to..."
+//   remind me (?:to|that i need to) - the two phrasings people actually say
+const WAKE_PHRASE_SOURCE =
+  /hey,?\s+co[-\s]?worker,?\s+(?:please\s+)?remind me (?:to|that i need to)\s+([^\n]+)/
+const WAKE_PHRASE_RE = new RegExp(WAKE_PHRASE_SOURCE.source, 'i')
+const WAKE_PHRASE_RE_GLOBAL = new RegExp(WAKE_PHRASE_SOURCE.source, 'gi')
 
 function cleanTask(raw) {
   const task = raw.trim().replace(/[.!?]+$/, '').trim()
