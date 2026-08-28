@@ -4,9 +4,10 @@ python-dotenv==1.0.1
 pydantic==2.10.4
 
 # AI provider — Gemini free tier for local dev/testing (per CLAUDE.md).
-# Swap for `openai` when moving to the GPT-5 default; keep the
-# {summary, tasks, facts} prompt/response contract identical either way.
+# Both installed so swapping providers is purely an .env change (see
+# backend/ai.py) — only one's key should actually be set at a time.
 google-generativeai==0.8.3
+openai==1.58.1
 
 # Storage — added when Milestone 2 ("save works") wires up persistence.
 supabase==2.10.0

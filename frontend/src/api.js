@@ -1,11 +1,16 @@
 // Single place for the backend base URL — avoids hardcoding it in every
-// screen. Port 8001, not FastAPI/uvicorn's 8000 default: a prior dev
-// server left Windows in a stuck state on 8000 (two PIDs simultaneously
-// LISTENING per netstat, neither killable, neither a live process per
-// Get-Process — stale kernel-level TCP state, not an app bug). Moved off
-// it rather than debug OS socket internals. Keep this in sync with the
-// `uvicorn main:app --port 8001` command backend is started with.
-const API_BASE = 'http://localhost:8001'
+// screen. Keep in sync with the port uvicorn is started on, and with the
+// CORS allowlist in backend/main.py.
+//
+// Gotcha worth knowing when a backend change doesn't seem to take effect:
+// `uvicorn --reload` spawns a child worker, and killing only the parent
+// reloader PID leaves that worker orphaned and still bound to the port,
+// happily serving the OLD code. Windows keeps attributing the socket to
+// the dead parent's PID, so it looks like a phantom listener. In this
+// venv the workers are named `python3.11.exe` (not `python.exe`), which
+// makes them easy to miss. Kill the workers by name, not just the PID
+// uvicorn printed.
+const API_BASE = 'http://localhost:8000'
 
 export async function saveSession(transcript) {
   const res = await fetch(`${API_BASE}/sessions`, {
@@ -32,4 +37,13 @@ export async function saveTasks(sessionId, tasks) {
     throw new Error(`Task save failed (${res.status}): ${body}`)
   }
   return res.json() // { saved }
+}
+
+export async function summarizeSession(sessionId) {
+  const res = await fetch(`${API_BASE}/sessions/${sessionId}/summarize`, { method: 'POST' })
+  if (!res.ok) {
+    const body = await res.text()
+    throw new Error(`Summarize failed (${res.status}): ${body}`)
+  }
+  return res.json() // { summary, tasks, facts }
 }
