@@ -25,6 +25,7 @@ up, but are UNVERIFIED — this environment has no OPENAI_API_KEY to test.
 
 import json
 import os
+from datetime import datetime, timezone
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -156,6 +157,14 @@ def answer_recall(question: str, sessions: list[dict]) -> str:
         # the model improvise an answer from an empty context either.
         return "I don't have any past sessions stored yet, so there's nothing to recall."
 
+    # Today's date has to be stated explicitly: the model has no clock, so
+    # without it a question like "what did I decide yesterday?" can't be
+    # resolved against the dated notes and it hedges across every session.
+    today = datetime.now(timezone.utc).date().isoformat()
     context = format_session_context(sessions)
-    user_content = f"Past session notes:\n\n{context}\n\nQuestion: {question}"
+    user_content = (
+        f"Today's date is {today}.\n\n"
+        f"Past session notes:\n\n{context}\n\n"
+        f"Question: {question}"
+    )
     return _call_llm(RECALL_INSTRUCTION, user_content, schema=None).strip()

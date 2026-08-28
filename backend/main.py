@@ -65,19 +65,46 @@ class SaveTasksRequest(BaseModel):
     tasks: list[str]
 
 
-@app.post("/sessions/{session_id}/tasks")
-def save_tasks(session_id: str, body: SaveTasksRequest):
-    if not body.tasks:
-        return {"saved": 0}
+def _insert_tasks(session_id: str, tasks: list[str]) -> int:
+    """Inserts tasks for a session, skipping ones already stored for it.
+
+    Two paths write here — the live wake-phrase tray (at End Session) and
+    the AI extraction (at summarize) — and they overlap heavily, since a
+    spoken "Hey Coworker, remind me to X" is also an obvious Task to the
+    model. Dedupe so the same reminder doesn't land twice.
+    """
+    if not tasks:
+        return 0
+
+    existing_rows = (
+        get_client().table("tasks").select("text").eq("session_id", session_id).execute()
+    )
+    existing = {r["text"].strip().lower() for r in existing_rows.data}
 
     now = datetime.now(timezone.utc).isoformat()
-    rows = [{"session_id": session_id, "text": t, "timestamp": now} for t in body.tasks]
+    rows = []
+    seen = set(existing)
+    for t in tasks:
+        key = t.strip().lower()
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        rows.append({"session_id": session_id, "text": t, "timestamp": now})
+
+    if not rows:
+        return 0
+    result = get_client().table("tasks").insert(rows).execute()
+    return len(result.data)
+
+
+@app.post("/sessions/{session_id}/tasks")
+def save_tasks(session_id: str, body: SaveTasksRequest):
     try:
-        result = get_client().table("tasks").insert(rows).execute()
+        saved = _insert_tasks(session_id, body.tasks)
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Failed to save tasks: {exc}")
 
-    return {"saved": len(result.data)}
+    return {"saved": saved}
 
 
 @app.post("/sessions/{session_id}/summarize")
@@ -110,6 +137,15 @@ def summarize_session(session_id: str):
         )
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Failed to save summary: {exc}")
+
+    # Persist the model's extracted tasks too. Without this they'd only
+    # ever be displayed and then thrown away — the tasks table would hold
+    # nothing but wake-phrase hits, missing every task that was discussed
+    # without the magic phrase. Deduped against what's already stored.
+    try:
+        _insert_tasks(session_id, extracted["tasks"])
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Failed to save extracted tasks: {exc}")
 
     return extracted
 
