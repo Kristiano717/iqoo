@@ -11,4 +11,13 @@ export default defineConfig({
     port: 5175,
     strictPort: true,
   },
+  // onnxruntime-web (pulled in by both the VAD and Transformers.js) loads
+  // its wasm backend through a dynamic import. Vite's dep pre-bundler
+  // rewrites that import into .vite/deps/, where the wasm glue no longer
+  // resolves — the symptom is "no available backend found. ERR: [wasm]
+  // Failed to fetch dynamically imported module". Excluding these keeps
+  // them as real ESM so the runtime resolves its own assets.
+  optimizeDeps: {
+    exclude: ['onnxruntime-web', '@ricky0123/vad-web', '@huggingface/transformers'],
+  },
 })

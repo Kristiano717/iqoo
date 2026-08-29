@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useSpeechTranscript } from '../hooks/useSpeechTranscript.js'
+import { useTranscript } from '../hooks/useTranscript.js'
 import { saveSession, saveTasks } from '../api.js'
 import { findAllWakePhraseMatches } from '../wakePhrase.js'
 
@@ -9,9 +9,24 @@ import { findAllWakePhraseMatches } from '../wakePhrase.js'
 // regex match per CLAUDE.md — no second AI model running continuously).
 // Matches populate the task tray immediately; the tray is only POSTed to
 // the backend once, at End Session, alongside the transcript.
-export default function LiveSession({ onEnd }) {
-  const { isSupported, isListening, finalText, finalSegments, interimText, error, start, stop } =
-    useSpeechTranscript()
+//
+// The transcription engine is chosen by the caller (see useTranscript):
+// on-device Whisper by default, Chrome's cloud recognition as fallback.
+// Everything below is engine-agnostic — it only consumes finalSegments.
+export default function LiveSession({ engine, onEnd }) {
+  const {
+    isSupported,
+    isListening,
+    finalText,
+    finalSegments,
+    interimText,
+    error,
+    start,
+    stop,
+    modelState,
+    loadProgress,
+    level,
+  } = useTranscript(engine)
   const [tasks, setTasks] = useState([])
   const [saveState, setSaveState] = useState('idle') // idle | saving | error
   // Match start offsets (within the '\n'-joined segments text) already
@@ -64,7 +79,8 @@ export default function LiveSession({ onEnd }) {
       <div className="screen">
         <h1>Live Session</h1>
         <div className="error-banner">
-          This browser doesn't support the Web Speech API. Use Chrome or Edge for the live transcript demo.
+          This browser doesn't support the Web Speech API. Use Chrome or Edge, or switch to the
+          on-device Whisper engine, which works anywhere.
         </div>
       </div>
     )
@@ -76,7 +92,25 @@ export default function LiveSession({ onEnd }) {
       <div className="status-row">
         <span className={`status-dot ${isListening ? 'live' : ''}`} />
         <span>{isListening ? 'Listening…' : 'Stopped'}</span>
+        <span className="engine-tag">
+          {engine === 'webspeech' ? 'cloud speech' : 'on-device whisper'}
+        </span>
+        {/* Replaces Web Speech's interim text: with Whisper there's nothing
+            to show mid-sentence, so the meter carries "we can hear you". */}
+        {isListening && level !== undefined && (
+          <span className="level-meter" aria-hidden="true">
+            <span className="level-fill" style={{ transform: `scaleX(${Math.min(1, level)})` }} />
+          </span>
+        )}
       </div>
+
+      {modelState === 'loading' && (
+        <div className="notice">
+          Loading the on-device speech model
+          {loadProgress > 0 ? ` — ${Math.round(loadProgress * 100)}%` : '…'}. Speak anyway;
+          anything said now is transcribed once it finishes.
+        </div>
+      )}
 
       <div className="transcript-box">
         {finalText || <span style={{ color: '#999' }}>Start speaking…</span>}
