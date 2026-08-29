@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { askRecall } from '../api.js'
+import Markdown from '../components/Markdown.jsx'
 
 // Milestone 5 ("recall works"): the last piece of the loop. User asks a
 // question, backend pulls recent session summaries + facts by recency
@@ -50,7 +51,7 @@ export default function Recall({ onBack }) {
 
       {state === 'done' && result && (
         <div className="recall-answer">
-          <p style={{ margin: 0, lineHeight: 1.55 }}>{result.answer}</p>
+          <Markdown text={result.answer} />
           <p className="recall-meta">
             Answered from {result.sessions_searched} past{' '}
             {result.sessions_searched === 1 ? 'session' : 'sessions'}.

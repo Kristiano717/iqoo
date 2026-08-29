@@ -130,6 +130,37 @@ button.secondary {
   padding: 1rem;
 }
 
+/* Rendered LLM answer (see components/Markdown.jsx) */
+.md > *:first-child {
+  margin-top: 0;
+}
+
+.md > *:last-child {
+  margin-bottom: 0;
+}
+
+.md-heading {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 1.25rem 0 0.5rem;
+  color: #111;
+}
+
+.md-para {
+  margin: 0 0 0.75rem;
+  line-height: 1.55;
+}
+
+.md-list {
+  margin: 0 0 0.75rem;
+  padding-left: 1.25rem;
+  line-height: 1.55;
+}
+
+.md-list li {
+  margin-bottom: 0.35rem;
+}
+
 .recall-meta {
   margin: 0.75rem 0 0;
   color: #999;
