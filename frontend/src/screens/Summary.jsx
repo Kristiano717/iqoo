@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { summarizeSession } from '../api.js'
+import Records from '../components/Records.jsx'
 
 // Milestone 4 ("summary works"): calls the backend's single end-of-session
 // LLM extraction once this screen mounts. Kept here rather than in
@@ -35,13 +36,15 @@ export default function Summary({ session, onRestart, onRecall }) {
       <h1>Summary</h1>
 
       {sessionId ? (
-        <div className="placeholder-note">
-          Saved to Supabase — session <code>{sessionId}</code> ({transcript.length} chars).
+        <div className="saved-note">
+          <span className="ok">saved</span>
+          <code>{sessionId}</code>
+          <span>{transcript.length} chars</span>
         </div>
       ) : (
         <div className="error-banner">
-          Save failed{saveError ? `: ${saveError}` : ''}. Transcript is still shown below but wasn't persisted,
-          so it can't be summarized either.
+          Save failed{saveError ? `: ${saveError}` : ''}. The transcript is still shown below but
+          wasn't stored, so it can't be summarized.
         </div>
       )}
 
@@ -52,49 +55,26 @@ export default function Summary({ session, onRestart, onRecall }) {
 
       {aiState === 'done' && (
         <>
-          <p style={{ lineHeight: 1.5 }}>{aiResult.summary}</p>
+          <p>{aiResult.summary}</p>
 
-          <h2 style={{ fontSize: '1.1rem', marginTop: '1.5rem', marginBottom: '0.5rem' }}>
-            Tasks {aiResult.tasks.length > 0 && `(${aiResult.tasks.length})`}
-          </h2>
-          {aiResult.tasks.length === 0 ? (
-            <p style={{ color: '#999', margin: 0 }}>None extracted.</p>
-          ) : (
-            <ul style={{ paddingLeft: '1.25rem', margin: 0 }}>
-              {aiResult.tasks.map((t, i) => (
-                <li key={i}>{t}</li>
-              ))}
-            </ul>
-          )}
-
-          <h2 style={{ fontSize: '1.1rem', marginTop: '1.5rem', marginBottom: '0.5rem' }}>
-            Key Facts {aiResult.facts.length > 0 && `(${aiResult.facts.length})`}
-          </h2>
-          {aiResult.facts.length === 0 ? (
-            <p style={{ color: '#999', margin: 0 }}>None extracted.</p>
-          ) : (
-            <ul style={{ paddingLeft: '1.25rem', margin: 0 }}>
-              {aiResult.facts.map((f, i) => (
-                <li key={i}>{f}</li>
-              ))}
-            </ul>
-          )}
+          <Records items={aiResult.tasks} kind="task" label="Tasks" empty="None extracted." />
+          <Records items={aiResult.facts} kind="fact" label="Key facts" empty="None extracted." />
         </>
       )}
 
       {liveTasks.length > 0 && (
-        <details style={{ marginTop: '1.5rem' }}>
-          <summary>Wake-phrase tasks captured live ({liveTasks.length})</summary>
-          <ul style={{ paddingLeft: '1.25rem' }}>
+        <details>
+          <summary>Captured live by wake phrase ({liveTasks.length})</summary>
+          <ul className="records is-live">
             {liveTasks.map((t, i) => (
-              <li key={i}>{t}</li>
+              <li key={i}><span className="tag">task</span><span>{t}</span></li>
             ))}
           </ul>
         </details>
       )}
 
-      <details style={{ marginTop: '1rem' }}>
-        <summary>Raw transcript (debug)</summary>
+      <details>
+        <summary>Raw transcript</summary>
         <div className="transcript-box">{transcript || '(empty — no speech captured)'}</div>
       </details>
 

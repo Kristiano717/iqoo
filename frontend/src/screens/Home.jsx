@@ -1,9 +1,12 @@
 export default function Home({ onStart, onRecall, engine, onEngineChange }) {
   return (
     <div className="screen">
-      <h1>Second Coworker</h1>
-      <p className="subtitle">Your AI teammate that remembers every meeting.</p>
-      <div className="controls-row" style={{ marginTop: '1.5rem' }}>
+      <h1>Remembers what<br />the meeting decided.</h1>
+      <p className="subtitle">
+        Not a transcript you search later — decisions, tasks and facts pulled out as
+        structured memory, and answered back when you ask.
+      </p>
+      <div className="controls-row">
         <button onClick={onStart}>Start Session</button>
         <button className="secondary" onClick={onRecall}>Ask About Past Sessions</button>
       </div>

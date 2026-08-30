@@ -12,11 +12,17 @@ export default function Recall({ onBack }) {
   const [result, setResult] = useState(null)
   const [error, setError] = useState(null)
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    const q = question.trim()
-    if (!q) return
+  // Suggestion chips: a judge or first-time user has no idea what this
+  // can answer. Showing three real questions is faster than explaining.
+  const SUGGESTIONS = [
+    "What did I decide in yesterday's meeting?",
+    'What is still outstanding?',
+    'What does the client want?',
+  ]
 
+  const ask = async (q) => {
+    if (!q) return
+    setQuestion(q)
     setState('loading')
     setError(null)
     try {
@@ -29,10 +35,17 @@ export default function Recall({ onBack }) {
     }
   }
 
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    ask(question.trim())
+  }
+
   return (
     <div className="screen">
       <h1>Recall</h1>
-      <p className="subtitle">Ask about anything from your past sessions.</p>
+      <p className="subtitle">
+        Answered from stored memory objects — never by re-reading a transcript.
+      </p>
 
       <form onSubmit={handleSubmit} className="recall-form">
         <input
@@ -47,14 +60,21 @@ export default function Recall({ onBack }) {
         </button>
       </form>
 
+      {state === 'idle' && (
+        <div className="suggestions">
+          {SUGGESTIONS.map((q) => (
+            <button type="button" key={q} onClick={() => ask(q)}>{q}</button>
+          ))}
+        </div>
+      )}
+
       {state === 'error' && <div className="error-banner">{error}</div>}
 
       {state === 'done' && result && (
         <div className="recall-answer">
           <Markdown text={result.answer} />
           <p className="recall-meta">
-            Answered from {result.sessions_searched} past{' '}
-            {result.sessions_searched === 1 ? 'session' : 'sessions'}.
+            {result.sessions_searched} session{result.sessions_searched === 1 ? '' : 's'} searched
           </p>
         </div>
       )}

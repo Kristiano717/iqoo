@@ -11,13 +11,12 @@ export default defineConfig({
     port: 5175,
     strictPort: true,
   },
-  // onnxruntime-web (pulled in by both the VAD and Transformers.js) loads
-  // its wasm backend through a dynamic import. Vite's dep pre-bundler
-  // rewrites that import into .vite/deps/, where the wasm glue no longer
-  // resolves — the symptom is "no available backend found. ERR: [wasm]
-  // Failed to fetch dynamically imported module". Excluding these keeps
-  // them as real ESM so the runtime resolves its own assets.
-  optimizeDeps: {
-    exclude: ['onnxruntime-web', '@ricky0123/vad-web', '@huggingface/transformers'],
-  },
+  // NOTE: do not add @ricky0123/vad-web or @huggingface/transformers to
+  // optimizeDeps.exclude. Both ship CommonJS, and Vite's pre-bundler is
+  // what converts that to ESM for the browser — excluding them serves raw
+  // `exports`/`require` to the page, which throws at module load and
+  // renders a blank app. Tried it; that's exactly what happened.
+  //
+  // The onnxruntime wasm path is handled at the call site instead (see
+  // useWhisperTranscript.js) rather than through bundler config.
 })

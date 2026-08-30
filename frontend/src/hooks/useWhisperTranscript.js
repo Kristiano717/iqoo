@@ -1,5 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { MicVAD } from '@ricky0123/vad-web'
+
+// vad-web is imported lazily, inside start(), on purpose. It pulls in
+// onnxruntime, and a failure anywhere in that chain used to throw at module
+// load — which blanked the entire app, including the Web Speech path that
+// has nothing to do with it. An experimental engine should only be able to
+// break itself, so the cost of loading it is deferred until it's actually
+// selected and started.
+let micVadModule = null
+async function loadMicVAD() {
+  if (!micVadModule) micVadModule = await import('@ricky0123/vad-web')
+  return micVadModule.MicVAD
+}
 
 // On-device transcription: Silero VAD finds utterance boundaries, Whisper
 // transcribes each one in a worker. Drop-in replacement for
@@ -21,7 +32,11 @@ import { MicVAD } from '@ricky0123/vad-web'
 // pauses makes the app look frozen.
 const MAX_SEGMENT_MS = 9000
 
-export function useWhisperTranscript() {
+// `enabled` gates the worker: useTranscript mounts both engines to keep hook
+// order stable, so without this the Whisper worker (and the ~500kB of
+// Transformers.js inside it) would spin up on every page load even when the
+// Web Speech engine is the one selected.
+export function useWhisperTranscript(enabled = true) {
   const [isListening, setIsListening] = useState(false)
   const [finalText, setFinalText] = useState('')
   const [finalSegments, setFinalSegments] = useState([])
@@ -45,6 +60,8 @@ export function useWhisperTranscript() {
   const pendingRef = useRef([])
 
   useEffect(() => {
+    if (!enabled) return
+
     const worker = new Worker(new URL('../workers/whisperWorker.js', import.meta.url), {
       type: 'module',
     })
@@ -87,7 +104,7 @@ export function useWhisperTranscript() {
       workerRef.current = null
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [enabled])
 
   // Append completed segments in spoken order, stopping at the first one
   // still in flight so nothing jumps ahead of it.
@@ -121,6 +138,7 @@ export function useWhisperTranscript() {
     nextIdRef.current = 0
 
     try {
+      const MicVAD = await loadMicVAD()
       const vad = await MicVAD.new({
         onSpeechEnd: handleSpeechEnd,
         onFrameProcessed: (probs) => setLevel(probs.isSpeech ?? 0),
@@ -129,18 +147,19 @@ export function useWhisperTranscript() {
         redemptionFrames: 12,
         preSpeechPadFrames: 3,
         minSpeechFrames: 4,
-        // Worklet + Silero weights come from public/vad rather than the
-        // default CDN, so those are local. They're fetched, not imported,
-        // which is why serving them from public/ works.
+        // Both paths point at files vendored into public/ (see public/vad
+        // and public/ort), so transcription never depends on a CDN.
         //
-        // onnxWASMBasePath is deliberately NOT set: onnxruntime resolves
-        // its wasm glue via a dynamic import(), and Vite refuses to resolve
-        // imports pointing into public/ ("can only be referenced via HTML
-        // tags"). Left at the default so the bundler handles it — which
-        // means ORT's wasm is currently fetched from a CDN on first load.
-        // TODO before going fully offline: vendor ORT through the bundler
-        // instead, or self-host it outside public/.
-        baseAssetPath: '/vad/',
+        // These MUST be absolute URLs built at runtime, not bare paths.
+        // vad-web defaults onnxWASMBasePath to './', which resolves
+        // relative to its own location — after Vite pre-bundling that's
+        // .vite/deps/, where the wasm glue doesn't exist ("no available
+        // backend found. ERR: [wasm]"). A bare '/ort/' doesn't work either:
+        // Vite's import analysis intercepts it and refuses, because files
+        // in public/ can't be imported from source. A full origin-prefixed
+        // URL is treated as external, so it passes through untouched.
+        baseAssetPath: `${window.location.origin}/vad/`,
+        onnxWASMBasePath: `${window.location.origin}/ort/`,
       })
       vadRef.current = vad
       vad.start()

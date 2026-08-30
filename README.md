@@ -85,6 +85,23 @@ vague:
 cd backend && python seed_demo.py --reset
 ```
 
+## Transcription engines
+
+Home has an engine picker:
+
+- **Cloud (Web Speech)** — the default and the verified path. Word-by-word,
+  near-instant, but sends audio to Google and needs a network.
+- **On-device (Whisper)** — Silero VAD segments speech, Whisper transcribes
+  each utterance in a worker. Nothing leaves the device, ~2s after each
+  pause, no interim text. Still experimental: its browser-side init is not
+  yet confirmed working. First run downloads ~152MB of model.
+
+`frontend/public/ort/` holds the onnxruntime wasm the Whisper path needs.
+It is **gitignored** (~40MB, reproducible) and regenerated automatically on
+`npm install`, `npm run dev` and `npm run build` by
+`frontend/scripts/copy-ort-assets.mjs`. If Whisper reports "no available
+backend found", run that script.
+
 ## Gotchas worth knowing
 
 **`uvicorn --reload` silently serves stale code.** It bit us repeatedly. The

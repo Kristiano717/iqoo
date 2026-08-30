@@ -16,9 +16,10 @@ export const ENGINES = ['whisper', 'webspeech']
 
 // Both hooks are called unconditionally — React requires a stable hook
 // order, so the inactive engine still mounts. Neither touches the mic until
-// start() is called, so the idle one costs nothing but its own state.
+// start() is called, and Whisper's `enabled` flag keeps it from loading its
+// worker and model machinery unless it's the engine actually in use.
 export function useTranscript(engine) {
   const speech = useSpeechTranscript()
-  const whisper = useWhisperTranscript()
+  const whisper = useWhisperTranscript(engine === 'whisper')
   return engine === 'webspeech' ? speech : whisper
 }

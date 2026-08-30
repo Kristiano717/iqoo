@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranscript } from '../hooks/useTranscript.js'
 import { saveSession, saveTasks } from '../api.js'
 import { findAllWakePhraseMatches } from '../wakePhrase.js'
+import Records from '../components/Records.jsx'
 
 // Milestone 1 gave us the live transcript, Milestone 2 saves the session.
 // Milestone 3 ("tasks work") adds this: wake-phrase detection runs live,
@@ -89,19 +90,30 @@ export default function LiveSession({ engine, onEnd }) {
   return (
     <div className="screen">
       <h1>Live Session</h1>
-      <div className="status-row">
-        <span className={`status-dot ${isListening ? 'live' : ''}`} />
-        <span>{isListening ? 'Listening…' : 'Stopped'}</span>
+      <div className="instrument">
+        <span className={`rec ${isListening ? 'on' : ''}`}>
+          <span className={`status-dot ${isListening ? 'live' : ''}`} />
+          {isListening ? 'recording' : 'stopped'}
+        </span>
+        {/* Only rendered when the engine actually reports a mic level.
+            Web Speech exposes none, and an animation that isn't driven by
+            real audio would be decoration pretending to be a readout. */}
+        {isListening && typeof level === 'number' && (
+          <span className="bars" aria-hidden="true">
+            {[0, 1, 2, 3, 4].map((i) => (
+              <i
+                key={i}
+                style={{
+                  height: `${20 + Math.min(1, level) * 80 * (0.55 + 0.45 * Math.sin(i * 1.3))}%`,
+                }}
+              />
+            ))}
+          </span>
+        )}
+        <span className="spacer" />
         <span className="engine-tag">
           {engine === 'webspeech' ? 'cloud speech' : 'on-device whisper'}
         </span>
-        {/* Replaces Web Speech's interim text: with Whisper there's nothing
-            to show mid-sentence, so the meter carries "we can hear you". */}
-        {isListening && level !== undefined && (
-          <span className="level-meter" aria-hidden="true">
-            <span className="level-fill" style={{ transform: `scaleX(${Math.min(1, level)})` }} />
-          </span>
-        )}
       </div>
 
       {modelState === 'loading' && (
@@ -113,29 +125,21 @@ export default function LiveSession({ engine, onEnd }) {
       )}
 
       <div className="transcript-box">
-        {finalText || <span style={{ color: '#999' }}>Start speaking…</span>}
+        {finalText || <span className="placeholder">Start speaking…</span>}
         {interimText && <span className="interim">{finalText ? ' ' : ''}{interimText}</span>}
       </div>
 
       {error && <div className="error-banner">Speech recognition error: {error}</div>}
 
-      <h2 style={{ fontSize: '1.1rem', marginTop: '1.5rem', marginBottom: '0.5rem' }}>
-        Task Tray {tasks.length > 0 && `(${tasks.length})`}
-      </h2>
-      {tasks.length === 0 ? (
-        <p style={{ color: '#999', margin: 0 }}>
-          Say "Hey Coworker, remind me to…" to capture a task.
-        </p>
-      ) : (
-        <ul style={{ paddingLeft: '1.25rem', margin: 0 }}>
-          {tasks.map((t, i) => (
-            <li key={i}>{t}</li>
-          ))}
-        </ul>
-      )}
+      <Records
+        items={tasks}
+        kind="live"
+        label="Task tray"
+        empty={'Say "Hey Coworker, remind me to…" and it lands here instantly.'}
+      />
 
       <div className="controls-row">
-        <button onClick={handleEnd} disabled={saveState === 'saving'}>
+        <button className="danger" onClick={handleEnd} disabled={saveState === 'saving'}>
           {saveState === 'saving' ? 'Saving…' : 'End Session'}
         </button>
       </div>
