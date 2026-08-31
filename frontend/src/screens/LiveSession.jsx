@@ -57,6 +57,18 @@ export default function LiveSession({ engine, onEnd }) {
   const handleEnd = async () => {
     stop()
     const transcript = finalText.trim()
+
+    // Nothing was captured, so there's no session to save. Guarding here
+    // rather than letting the POST through matters for the demo: the row
+    // would save fine and only fail at the summarize step, which surfaces
+    // as a red 400 on the Summary screen — and the empty session still
+    // counts against the newest-10 window that recall retrieves from, so a
+    // few stray taps quietly crowd real meetings out of the answer.
+    if (!transcript) {
+      setSaveState('empty')
+      return
+    }
+
     setSaveState('saving')
     try {
       const saved = await saveSession(transcript)
@@ -131,6 +143,15 @@ export default function LiveSession({ engine, onEnd }) {
 
       {error && <div className="error-banner">Speech recognition error: {error}</div>}
 
+      {saveState === 'empty' && (
+        <div className="notice">
+          Nothing was transcribed, so there's no session to save. Check that the tab has
+          microphone access and that the page is on <code>localhost</code> or an
+          <code> https://</code> address — speech recognition is blocked on a plain-HTTP
+          network address like <code>http://192.168.x.x</code>.
+        </div>
+      )}
+
       <Records
         items={tasks}
         kind="live"
@@ -139,6 +160,20 @@ export default function LiveSession({ engine, onEnd }) {
       />
 
       <div className="controls-row">
+        {saveState === 'empty' && (
+          <button
+            onClick={() => {
+              // start() clears the transcript state, so reset the wake-phrase
+              // offset memo alongside it — otherwise offsets recorded before
+              // the restart would suppress matches at the same position.
+              seenMatchStartsRef.current = new Set()
+              setSaveState('idle')
+              start()
+            }}
+          >
+            Resume recording
+          </button>
+        )}
         <button className="danger" onClick={handleEnd} disabled={saveState === 'saving'}>
           {saveState === 'saving' ? 'Saving…' : 'End Session'}
         </button>
