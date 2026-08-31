@@ -25,6 +25,9 @@ export function useSpeechTranscript() {
   // always sees the latest transcript without re-subscribing on every change.
   const finalTextRef = useRef('')
   const wantListeningRef = useRef(false)
+  // Handle for the pending auto-restart, so stopping the session can cancel a
+  // restart that's already in flight (see the 'end' handler below).
+  const restartTimerRef = useRef(null)
 
   useEffect(() => {
     if (!isSupported) return
@@ -62,22 +65,34 @@ export function useSpeechTranscript() {
 
     // The API auto-stops after periods of silence even in continuous mode.
     // If the user hasn't ended the session, restart it transparently.
+    //
+    // The delay matters on Android: Chrome there ignores `continuous` and
+    // ends recognition after every single utterance, so this handler fires
+    // constantly. Restarting synchronously inside it races the teardown of
+    // the session that just ended — start() throws InvalidStateError, the
+    // catch swallows it, and the transcript dies after one sentence. A short
+    // gap makes the restart reliable on the phone and is imperceptible on
+    // desktop, where this path is rare anyway.
     recognition.onend = () => {
-      if (wantListeningRef.current) {
+      if (!wantListeningRef.current) {
+        setIsListening(false)
+        return
+      }
+      restartTimerRef.current = setTimeout(() => {
+        if (!wantListeningRef.current) return
         try {
           recognition.start()
         } catch {
           // already starting/started — ignore
         }
-      } else {
-        setIsListening(false)
-      }
+      }, 300)
     }
 
     recognitionRef.current = recognition
 
     return () => {
       wantListeningRef.current = false
+      clearTimeout(restartTimerRef.current)
       recognition.onresult = null
       recognition.onerror = null
       recognition.onend = null
@@ -100,6 +115,7 @@ export function useSpeechTranscript() {
   const stop = useCallback(() => {
     if (!recognitionRef.current) return
     wantListeningRef.current = false
+    clearTimeout(restartTimerRef.current)
     recognitionRef.current.stop()
     setIsListening(false)
   }, [])

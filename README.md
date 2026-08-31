@@ -85,6 +85,94 @@ vague:
 cd backend && python seed_demo.py --reset
 ```
 
+## Running it on a phone
+
+The app is a PWA, so the phone runs the same code the laptop does — there's no
+separate mobile build. Two things have to be true, and both come from the
+browser, not from us:
+
+- **It must be served over HTTPS.** `getUserMedia` and the Web Speech API are
+  restricted to secure contexts, so `http://192.168.x.x:5175` over the LAN is
+  refused outright. Only `localhost` gets an exemption, and on the phone
+  `localhost` is the phone.
+- **The API must be same-origin.** That's why `src/api.js` calls `/api/...` and
+  `vite.config.js` proxies it to FastAPI — one tunnel covers both servers, and
+  an HTTPS page never has to call a plain-HTTP backend.
+
+### 1. Start both servers as usual
+
+```bash
+cd backend && venv\Scripts\activate && uvicorn main:app --reload
+cd frontend && npm run dev
+```
+
+### 2. Expose the frontend over HTTPS
+
+`cloudflared` gives a throwaway HTTPS URL with no account and no signup:
+
+```bash
+winget install --id Cloudflare.cloudflared
+cloudflared tunnel --url http://127.0.0.1:5175
+```
+
+It prints a `https://<random-words>.trycloudflare.com` URL. Tunnel hostnames
+are already in `server.allowedHosts` in `vite.config.js` — without that, Vite
+5.4.12+ answers every tunnel request with "Blocked request".
+
+Only tunnel the *frontend*. The backend is reached through the proxy, so
+exposing port 8000 separately isn't needed and would reintroduce CORS.
+
+### 3. Install it on the phone
+
+Open the tunnel URL in Chrome on the phone → **⋮ → Add to Home Screen** →
+**Install**.
+
+If the dialog says "Add shortcut" rather than "Install", Chrome hasn't accepted
+the manifest — the app will still run, but only as a browser tab, and Android
+can't float a browser tab. Check `chrome://inspect` or DevTools → Application →
+Manifest against `public/manifest.webmanifest`.
+
+### 4. Float it
+
+Installing produces a WebAPK — a real installed Android app, not a bookmark —
+which is what Funtouch OS / OriginOS's floating-window switcher can pick up:
+swipe in from a bottom corner to open the multi-window sidebar, then drag
+**Coworker** out as a floating window. (Untested on the target device; if the
+sidebar won't take it, split-screen from Recents is the fallback and reads
+almost as well on video.)
+
+### 5. Record
+
+The built-in screen recorder in Quick Settings is the cleanest capture.
+
+**Test the audio source before the real take.** Android generally grants the
+microphone to one app at a time, so a screen recorder set to record mic audio
+can starve Chrome's capture — the video has your voice but the transcript never
+moves. If that happens, either set the recorder to mute/media only and narrate
+in the edit, or film the phone with a second camera, which for a phone-first
+hackathon looks more convincing anyway.
+
+Seed the backdated session first, or the "yesterday" question has nothing to
+find:
+
+```bash
+cd backend && python seed_demo.py --reset
+```
+
+### Known risks on Android
+
+- **Chrome ignores `continuous` on Android** and ends recognition after every
+  utterance. `useSpeechTranscript` restarts it automatically on `end`, with a
+  short delay — restarting synchronously races the teardown and throws, which
+  would kill the transcript after one sentence. Long pauses may still drop a
+  word at the seam.
+- **The tunnel URL changes on every `cloudflared` restart**, and reinstalling
+  the PWA against a new origin gives you a second icon. Leave the tunnel
+  running for the whole session.
+- **Gemini's free tier is 20 requests/day.** Each end-of-session summary and
+  each recall question is one. Rehearse the speech parts with the AI steps
+  skipped.
+
 ## Transcription engines
 
 Home has an engine picker:
