@@ -87,7 +87,7 @@ Honest status, because a demo that overclaims is worse than a small one that doe
 | Supabase persistence | ✅ Verified |
 | Cross-session recall | ✅ Verified, including date-relative questions |
 | Installable on a phone (PWA) | ✅ Builds a real WebAPK |
-| On-device Whisper | ⚠️ Wired up and selectable, **browser-side init unconfirmed** |
+| On-device Whisper | ⚠️ VAD + model init confirmed in-browser; generate call fixed and verified in Node — awaiting one real-speech run |
 | Auth / multi-user | ❌ Out of scope — single-user prototype, RLS off |
 | Fully on-device LLM | ❌ Roadmap (see below) |
 
@@ -218,8 +218,13 @@ Home has an engine picker:
   near-instant, but sends audio to Google and needs a network.
 - **On-device (Whisper)** — Silero VAD segments speech, Whisper transcribes each
   utterance in a worker. Nothing leaves the device; ~2s after each pause, no
-  interim text. First run downloads ~152MB. **Still experimental** — its
-  browser-side init isn't confirmed working, which is why it isn't the default.
+  interim text. First run downloads ~152MB.
+
+  **Status:** Silero VAD, the onnxruntime wasm and Whisper's model init are all
+  confirmed working in the browser. The last step was blocked by a bad generate
+  call — `language`/`task` passed to the English-only `tiny.en`, which throws
+  unconditionally — now fixed and verified against the real model. It stays off
+  by default until it's been run once on real speech.
 
 `frontend/public/ort/` holds the onnxruntime wasm Whisper needs. It's
 **gitignored** (~40MB, reproducible) and regenerated on `npm install` / `dev` /

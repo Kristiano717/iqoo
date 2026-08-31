@@ -18,8 +18,10 @@ import { pipeline, env } from '@huggingface/transformers'
 env.allowLocalModels = false
 
 // tiny.en is the live-transcript model: roughly real-time on a flagship
-// phone. Accuracy matters less here than latency — the accurate pass is the
-// full-session re-transcribe at the end (see MODEL_ACCURATE below).
+// phone, and English-only, which is what makes the `language`/`task`
+// options invalid below. Accuracy is traded for latency deliberately —
+// a second, more accurate full-session pass is a roadmap item, not
+// something this worker does today.
 const MODEL_FAST = 'onnx-community/whisper-tiny.en'
 
 let transcriber = null
@@ -56,11 +58,16 @@ self.onmessage = async (event) => {
     if (msg.type === 'transcribe') {
       const model = await load()
       const output = await model(msg.audio, {
-        // The segment is already one utterance bounded by silence, so
-        // Whisper's own chunking would only add overhead here.
+        // Whisper only ever sees 30s at a time. Segments are single
+        // utterances bounded by silence so they're almost always shorter
+        // than that, but chunking is left on so an unusually long one gets
+        // transcribed in full instead of silently truncated at 30s.
         chunk_length_s: 30,
-        language: 'english',
-        task: 'transcribe',
+        // No `language` or `task` here on purpose. tiny.en is English-only,
+        // and transformers.js throws outright if either is passed to a
+        // non-multilingual model — it has no language/task tokens to map
+        // them onto, since English transcription is the only thing it does.
+        // Passing them is only valid on the multilingual builds.
       })
       self.postMessage({ type: 'result', id: msg.id, text: (output.text || '').trim() })
       return
