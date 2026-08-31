@@ -268,6 +268,10 @@ incomplete features.
 - **Desktop background agent** with system-audio capture (WASAPI/CoreAudio)
 - **Pre-meeting briefing** — what you decided last time, before you walk in
 
+## License
+
+MIT — see [LICENSE](LICENSE).
+
 ---
 
 <sub>[`CLAUDE.md`](CLAUDE.md) is the locked scope for this prototype and takes
