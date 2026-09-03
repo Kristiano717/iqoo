@@ -316,35 +316,6 @@ button.danger {
 
 .instrument .spacer { flex: 1; }
 
-.engine-tag {
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 0.16rem 0.55rem;
-  color: var(--text-faint);
-  white-space: nowrap;
-  font-size: 0.68rem;
-}
-
-/* Level bars. Driven by real mic level where the engine exposes one;
-   otherwise hidden rather than faked. */
-.bars {
-  display: flex;
-  align-items: flex-end;
-  gap: 2px;
-  height: 16px;
-  flex: none;
-}
-
-.bars i {
-  display: block;
-  width: 3px;
-  background: var(--live);
-  border-radius: 1px;
-  height: 20%;
-  transform-origin: bottom;
-  transition: height 90ms ease-out;
-}
-
 /* ---------- transcript ---------- */
 
 .transcript-box {
@@ -463,62 +434,6 @@ button.danger {
 }
 
 .saved-note .ok { color: var(--task); }
-
-/* ---------- engine picker ---------- */
-
-.engine-picker {
-  margin: var(--gap-sm) 0 0;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface);
-  padding: var(--gap-sm) var(--gap) var(--gap);
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  box-shadow: var(--shadow);
-}
-
-.engine-picker legend {
-  font-family: var(--mono);
-  font-size: 0.66rem;
-  text-transform: uppercase;
-  letter-spacing: 0.13em;
-  color: var(--text-faint);
-  padding: 0 0.35rem;
-}
-
-.engine-picker label {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: var(--gap-sm);
-  align-items: start;
-  cursor: pointer;
-  padding: 0.45rem 0.35rem;
-  border-radius: var(--radius-sm);
-  transition: background 120ms ease;
-}
-
-.engine-picker label:hover { background: var(--surface-sunk); }
-
-.engine-picker input {
-  margin-top: 0.32rem;
-  accent-color: var(--accent-bright);
-}
-
-.engine-picker label span {
-  display: flex;
-  flex-direction: column;
-  gap: 0.12rem;
-}
-
-.engine-picker strong { font-weight: 580; font-size: 0.93rem; }
-
-.engine-picker em {
-  font-style: normal;
-  color: var(--text-faint);
-  font-size: 0.83rem;
-  line-height: 1.45;
-}
 
 /* ---------- recall ---------- */
 

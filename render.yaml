@@ -1,0 +1,28 @@
+# Render blueprint for the FastAPI backend.
+#
+# The frontend is NOT deployed here — it's a static Vite build on Vercel,
+# which rewrites /api/* to this service (see frontend/vercel.json). That
+# keeps every browser request same-origin, so CORS never enters the picture
+# and the frontend never needs to know this URL.
+#
+# rootDir is backend/, but the whole repo is checked out, so ai.py can still
+# reach ../prompts (it resolves them from __file__, not the working dir).
+services:
+  - type: web
+    name: second-coworker-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      # Set these in the Render dashboard — never commit them.
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false

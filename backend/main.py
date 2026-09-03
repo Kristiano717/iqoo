@@ -8,6 +8,7 @@ works") added the single end-of-session LLM call. Milestone 5 ("recall
 works") adds cross-session memory recall — the last piece of the loop.
 """
 
+import os
 from datetime import datetime, timezone
 
 from fastapi import FastAPI, HTTPException
@@ -24,11 +25,15 @@ RECALL_SESSION_LIMIT = 10
 
 app = FastAPI(title="Second Coworker API")
 
-# Pinned in frontend/vite.config.js (see comment there for why it's not
-# the 5173 default). Update both together if the frontend port changes.
+# Requests normally reach this app same-origin — via Vite's /api proxy in
+# development and Vercel's /api rewrite in production — so CORS usually
+# never applies at all. This stays as a safety net for hitting the API
+# directly from a browser; set ALLOWED_ORIGINS (comma-separated) to widen
+# it rather than editing this list.
+_allowed_origins = os.environ.get("ALLOWED_ORIGINS", "http://localhost:5175")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5175"],
+    allow_origins=[o.strip() for o in _allowed_origins.split(",") if o.strip()],
     allow_methods=["*"],
     allow_headers=["*"],
 )

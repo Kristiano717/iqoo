@@ -10,11 +10,6 @@ import Recall from './screens/Recall.jsx'
 export default function App() {
   const [screen, setScreen] = useState('home')
   const [session, setSession] = useState({ transcript: '', sessionId: null, saveError: null })
-  // Web Speech is the default because it's the path that's actually
-  // verified working end to end. On-device Whisper is wired up and
-  // selectable, but its browser-side init is still being debugged — until
-  // that's confirmed on real hardware, the demo shouldn't depend on it.
-  const [engine, setEngine] = useState('webspeech')
 
   const handleSessionEnd = (result) => {
     setSession(result)
@@ -24,14 +19,9 @@ export default function App() {
   return (
     <div className="app-shell">
       {screen === 'home' && (
-        <Home
-          onStart={() => setScreen('live')}
-          onRecall={() => setScreen('recall')}
-          engine={engine}
-          onEngineChange={setEngine}
-        />
+        <Home onStart={() => setScreen('live')} onRecall={() => setScreen('recall')} />
       )}
-      {screen === 'live' && <LiveSession engine={engine} onEnd={handleSessionEnd} />}
+      {screen === 'live' && <LiveSession onEnd={handleSessionEnd} />}
       {screen === 'summary' && (
         <Summary
           session={session}

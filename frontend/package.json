@@ -4,14 +4,12 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "node scripts/copy-ort-assets.mjs && vite",
-    "build": "node scripts/copy-ort-assets.mjs && vite build",
+    "dev": "vite",
+    "build": "vite build",
     "preview": "vite preview",
-    "postinstall": "node scripts/copy-ort-assets.mjs"
+    "icons": "node scripts/make-icons.mjs"
   },
   "dependencies": {
-    "@huggingface/transformers": "^4.2.0",
-    "@ricky0123/vad-web": "^0.0.30",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

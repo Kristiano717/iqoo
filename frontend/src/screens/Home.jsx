@@ -1,4 +1,4 @@
-export default function Home({ onStart, onRecall, engine, onEngineChange }) {
+export default function Home({ onStart, onRecall }) {
   return (
     <div className="screen">
       <h1>Remembers what<br />the meeting decided.</h1>
@@ -10,38 +10,6 @@ export default function Home({ onStart, onRecall, engine, onEngineChange }) {
         <button onClick={onStart}>Start Session</button>
         <button className="secondary" onClick={onRecall}>Ask About Past Sessions</button>
       </div>
-
-      {/* Exposed on Home rather than buried in settings so the engine can be
-          switched before a demo starts, without touching code. */}
-      <fieldset className="engine-picker">
-        <legend>Transcription</legend>
-        <label>
-          <input
-            type="radio"
-            name="engine"
-            value="webspeech"
-            checked={engine === 'webspeech'}
-            onChange={() => onEngineChange('webspeech')}
-          />
-          <span>
-            <strong>Cloud (Web Speech)</strong>
-            <em>Verified working. Word-by-word, near-instant — sends audio to Google. Chrome/Edge only.</em>
-          </span>
-        </label>
-        <label>
-          <input
-            type="radio"
-            name="engine"
-            value="whisper"
-            checked={engine === 'whisper'}
-            onChange={() => onEngineChange('whisper')}
-          />
-          <span>
-            <strong>On-device (Whisper) — experimental</strong>
-            <em>Audio never leaves this device, ~2s after each pause. Model init still being debugged; first load downloads ~152MB.</em>
-          </span>
-        </label>
-      </fieldset>
     </div>
   )
 }

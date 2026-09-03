@@ -36,9 +36,9 @@ from the structured objects, never by re-reading raw text.
 
 |  | Transcript tools | Second Coworker |
 |---|---|---|
-| What's stored | Raw text + a summary | Typed memory objects |
+| What's stored | Raw text + a summary | Structured memory statements |
 | Retrieval | Search the meeting you already remembered | Ask a question across all meetings |
-| Answer to "why did we drop X?" | A timestamp to go read | The decision, with its source session |
+| Answer to "why did we drop X?" | A timestamp to go read | The decision, and the meeting it came from |
 | Grows more useful over time | Archive grows | Memory grows |
 
 The categories are deliberately fixed and small. An open-ended "extract what
@@ -49,11 +49,11 @@ that already doesn't work.
 
 ```mermaid
 flowchart LR
-  A[Speech] -->|Web Speech API<br/>or on-device Whisper| B[Live transcript]
-  B -->|regex, client-side| C[Wake phrase<br/>→ task tray]
+  A[Speech] -->|Web Speech API| B[Live transcript]
+  B -->|regex, client-side| C[Wake phrase - task tray]
   B -->|once, at session end| D[LLM extraction]
   D -->|summary + tasks + facts| E[(Supabase)]
-  E -->|newest 10 sessions| F[Recall<br/>answers from stored memory only]
+  E -->|newest 10 sessions| F[Recall - answers from stored memory only]
 ```
 
 1. **Start a session.** Speech renders live in the browser — no server round-trip.
@@ -86,10 +86,9 @@ Honest status, because a demo that overclaims is worse than a small one that doe
 | End-of-session extraction | ✅ Verified against live Gemini |
 | Supabase persistence | ✅ Verified |
 | Cross-session recall | ✅ Verified, including date-relative questions |
-| Installable on a phone (PWA) | ✅ Builds a real WebAPK |
-| On-device Whisper | ⚠️ VAD + model init confirmed in-browser; generate call fixed and verified in Node — awaiting one real-speech run |
+| Installable from the browser (PWA) | ✅ Manifest, icons and service worker in place |
+| Session review screen | ❌ Roadmap — recall works, but you can't browse one meeting on its own |
 | Auth / multi-user | ❌ Out of scope — single-user prototype, RLS off |
-| Fully on-device LLM | ❌ Roadmap (see below) |
 
 ## Stack
 
@@ -175,61 +174,43 @@ cd backend && python seed_demo.py --reset
 
 ---
 
-## Running it on a phone
+## Deploying
 
-The app is a PWA — the phone runs the same code the laptop does. Two constraints
-come from the browser, not from us:
+The app installs to a phone or desktop home screen as a PWA, and once deployed it
+works without anything running locally.
 
-- **It must be HTTPS.** `getUserMedia` and the Web Speech API are restricted to
-  secure contexts, so `http://192.168.x.x:5175` over the LAN is refused. Only
-  `localhost` is exempt, and on the phone `localhost` is the phone.
-- **The API must be same-origin.** Hence `/api` + the Vite proxy: one tunnel
-  covers both servers, and an HTTPS page never calls a plain-HTTP backend.
+The key idea: **the frontend always calls `/api/...` same-origin.** In development
+Vite proxies that to `localhost:8000`; in production Vercel rewrites it to the
+hosted backend. The frontend never learns the backend's real URL, so there is no
+CORS configuration and no build-time API variable to get wrong.
 
-**1. Start both servers** as above.
+**1. Backend → Render**
 
-**2. Expose the frontend.** `cloudflared` gives a throwaway HTTPS URL, no account:
+[`render.yaml`](render.yaml) is a blueprint: point Render at this repo and it
+picks up the build and start commands. Set `SUPABASE_URL`, `SUPABASE_KEY` and
+`GEMINI_API_KEY` in the dashboard — they're marked `sync: false` so they're never
+read from the repo.
 
-```bash
-winget install --id Cloudflare.cloudflared
-cloudflared tunnel --url http://127.0.0.1:5175
-```
+Note the free plan sleeps after inactivity and takes **~50s to wake**. Hit the
+URL once before any demo.
 
-Tunnel hostnames are already in `server.allowedHosts` — without that, Vite 5.4.12+
-answers every tunnel request with *"Blocked request"*. Only tunnel the frontend;
-the backend goes through the proxy.
+**2. Frontend → Vercel**
 
-**3. Install it.** Open the tunnel URL in Chrome on the phone →
-**⋮ → Add to Home Screen**. It must say **Install**, not *"Add shortcut"* — a
-shortcut is just a tab, and Android can't float a tab.
+Set the project's **Root Directory** to `frontend`. Vercel auto-detects Vite.
 
-**4. Float it.** Installing produces a WebAPK, a real installed Android app, which
-Funtouch OS / OriginOS's multi-window sidebar can pick up: swipe in from a bottom
-corner and drag **Coworker** out as a floating window. *(Untested on the target
-device; split-screen from Recents is the fallback.)*
+Then edit [`frontend/vercel.json`](frontend/vercel.json) and replace
+`REPLACE-ME.onrender.com` with the Render URL from step 1. That single rewrite is
+the whole integration.
 
-**5. Record** with the Quick Settings screen recorder — but see the mic note below.
+**3. Install it**
 
-## Transcription engines
+Open the Vercel URL in Chrome → **⋮ → Add to Home Screen**. It should say
+**Install**, not "Add shortcut" — a shortcut means the manifest wasn't accepted
+and you'll get a browser tab instead of an app.
 
-Home has an engine picker:
-
-- **Cloud (Web Speech)** — the default and the verified path. Word-by-word and
-  near-instant, but sends audio to Google and needs a network.
-- **On-device (Whisper)** — Silero VAD segments speech, Whisper transcribes each
-  utterance in a worker. Nothing leaves the device; ~2s after each pause, no
-  interim text. First run downloads ~152MB.
-
-  **Status:** Silero VAD, the onnxruntime wasm and Whisper's model init are all
-  confirmed working in the browser. The last step was blocked by a bad generate
-  call — `language`/`task` passed to the English-only `tiny.en`, which throws
-  unconditionally — now fixed and verified against the real model. It stays off
-  by default until it's been run once on real speech.
-
-`frontend/public/ort/` holds the onnxruntime wasm Whisper needs. It's
-**gitignored** (~40MB, reproducible) and regenerated on `npm install` / `dev` /
-`build` by `frontend/scripts/copy-ort-assets.mjs`. If Whisper reports *"no
-available backend found"*, run that script.
+> **Deploying makes the data public.** There's no auth, and RLS is off, so anyone
+> with the URL can create sessions and read every stored memory. That's fine for
+> a demo with demo data. Don't put a real meeting through the hosted version.
 
 ## Gotchas worth knowing
 
@@ -249,29 +230,26 @@ utterance. `useSpeechTranscript` restarts it on `end` with a short delay —
 restarting synchronously races the teardown, throws `InvalidStateError`, and the
 transcript dies after one sentence.
 
-**Screen recorders can starve the mic.** Android generally grants the microphone
-to one app at a time, so a screen recorder capturing mic audio can leave Chrome
-with silence — video with your voice, transcript frozen. Test the audio source
-before the real take.
+**Web Speech captures your microphone only.** In-person meetings work fully. On a
+video call, other participants come out of your speakers rather than your mic, so
+only you get transcribed — put the call on speaker, or see the roadmap.
 
-**Web Speech captures your microphone only.** In a video call, other participants
-come out of your speakers, not your mic. System audio needs WASAPI/CoreAudio,
-which is a roadmap item.
-
-**Gemini's free tier is 20 requests/day.** Every summary and every recall question
-is one. Rehearse the speech parts with the AI steps skipped.
+**Speech needs a secure context.** `localhost` and `https://` work;
+`http://192.168.x.x` is refused outright by the browser.
 
 ## Roadmap
 
 Deliberately *not* built yet — the prototype is one complete loop, not many
 incomplete features.
 
-- **On-device SLM** (Gemma via llama.cpp) so extraction and recall run with no
-  network and no API cost
+- **Session review** — open any past meeting on its own, see what came out of it,
+  and move around by date rather than only asking questions
+- **Capture the other side of a call** — `getDisplayMedia` tab audio, which also
+  yields a rough "them vs me" split without a diarization model
 - **Memory Graph** — link decisions to the requirements and people they touch
 - **Contradiction detection** across meetings ("this reverses what you decided in March")
-- **Desktop background agent** with system-audio capture (WASAPI/CoreAudio)
-- **Pre-meeting briefing** — what you decided last time, before you walk in
+- **Typed memory columns** — the six categories drive extraction today but are
+  flattened into a string array in storage
 
 ## License
 
