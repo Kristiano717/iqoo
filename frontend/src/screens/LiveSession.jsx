@@ -25,6 +25,7 @@ export default function LiveSession({ onEnd, onCancel }) {
     micSegments,
     finalText,
     interimText,
+    interimRemote,
     error,
     start,
     stop,
@@ -170,7 +171,7 @@ export default function LiveSession({ onEnd, onCancel }) {
       </div>
 
       <div className="transcript-box">
-        {segments.length === 0 && !interimText && (
+        {segments.length === 0 && !interimText && !interimRemote && (
           <span className="placeholder">Start speaking…</span>
         )}
         {segments.map((segment, i) => (
@@ -179,10 +180,20 @@ export default function LiveSession({ onEnd, onCancel }) {
             {segment.text}
           </p>
         ))}
+        {/* Both sides stream partial text, so both show it. Rendering only
+            the microphone's made the other person look slower than they were:
+            their words existed, we just weren't drawing them until the
+            utterance closed. */}
         {interimText && (
           <p className="line you interim-line">
             <span className="who">You</span>
             <span className="interim">{interimText}</span>
+          </p>
+        )}
+        {interimRemote && (
+          <p className="line them interim-line">
+            <span className="who">Them</span>
+            <span className="interim">{interimRemote}</span>
           </p>
         )}
       </div>

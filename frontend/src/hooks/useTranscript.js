@@ -26,6 +26,8 @@ function asFallback(speech) {
     micSegments: speech.finalSegments,
     finalText: speech.finalText,
     interimText: speech.interimText,
+    // Web Speech only ever hears the microphone.
+    interimRemote: '',
     error: speech.error,
     start: speech.start,
     stop: speech.stop,

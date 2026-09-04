@@ -39,6 +39,10 @@ export function useLiveTranscript() {
   const [micSegments, setMicSegments] = useState([])
   const [finalText, setFinalText] = useState('')
   const [interimText, setInterimText] = useState('')
+  // Tracked separately from the microphone's. Two sessions stream interim
+  // text independently, and merging them into one string makes each
+  // speaker's half-finished sentence overwrite the other's.
+  const [interimRemote, setInterimRemote] = useState('')
   const [error, setError] = useState(null)
   // Distinct from `error`: this means the microphone side never started, so
   // nothing at all is being captured and the caller should fall back to
@@ -78,6 +82,9 @@ export function useLiveTranscript() {
     }
 
     setSegments((prev) => [...prev, { text: clean, speaker }])
+    // Whichever side just committed, clear only that side's interim.
+    if (speaker === 'them') setInterimRemote('')
+    else setInterimText('')
     if (speaker === 'you') setMicSegments((prev) => [...prev, clean])
 
     const label = speaker === 'you' ? 'You' : 'Them'
@@ -97,6 +104,7 @@ export function useLiveTranscript() {
     streamsRef.current = []
     setIsListening(false)
     setInterimText('')
+    setInterimRemote('')
   }, [])
 
   // Capturing the other participant is its own step so it can be retried.
@@ -130,7 +138,7 @@ export function useLiveTranscript() {
       remoteRef.current = new LiveTranscriber({
         speaker: 'them',
         getToken: () => fetchLiveToken(),
-        onInterim: () => {},
+        onInterim: (text) => setInterimRemote(text),
         onFinal: appendFinal,
         onError: (message) => setError(message),
       })
@@ -153,6 +161,7 @@ export function useLiveTranscript() {
     setSegments([])
     setMicSegments([])
     setInterimText('')
+    setInterimRemote('')
     setHasRemote(false)
     setFatalError(false)
     finalTextRef.current = ''
@@ -204,6 +213,7 @@ export function useLiveTranscript() {
     micSegments,
     finalText,
     interimText,
+    interimRemote,
     error,
     start,
     stop,

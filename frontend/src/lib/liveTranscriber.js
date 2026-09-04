@@ -12,6 +12,21 @@ import { overlap } from './echoDedupe.js'
 const TARGET_SAMPLE_RATE = 16000
 const MIME_TYPE = `audio/pcm;rate=${TARGET_SAMPLE_RATE}`
 
+// Language hints, not a lock — the model still handles other languages, it
+// just stops trying to work out which one from a two-second fragment.
+// Leaving this empty selects automatic detection, which on short utterances
+// mis-detects often enough to produce confident nonsense. en-IN leads
+// because that's the accent this is being built and demoed with.
+const LANGUAGE_HINTS = ['en-IN', 'en-US']
+
+// Biases the recogniser toward terms it would otherwise have no reason to
+// expect. The wake phrase earns its place here more than anything else: the
+// whole product hangs on hearing it, and "coworker" is exactly the kind of
+// compound a general model renders as "co worker", "co-worker" or worse.
+// wakePhrase.js already tolerates those spellings; this reduces how often it
+// has to.
+const CUSTOM_VOCABULARY = ['Hey Coworker', 'remind me to', 'Second Coworker']
+
 // After switching to a replacement socket, keep the old one alive briefly and
 // keep emitting from it. A sentence already in flight when the handover
 // starts would otherwise be cut off — the old session is the only one holding
@@ -155,8 +170,10 @@ export class LiveTranscriber {
       model,
       config: {
         responseModalities: ['TEXT'],
-        // Empty list means automatic language detection.
-        inputAudioTranscription: { languageCodes: [] },
+        inputAudioTranscription: {
+          languageCodes: LANGUAGE_HINTS,
+          customVocabulary: CUSTOM_VOCABULARY,
+        },
         // Lets a replacement socket pick up where this one left off instead
         // of starting cold. An empty object still opts in — the server issues
         // resumption handles, we just aren't restoring one yet.
