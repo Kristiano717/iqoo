@@ -89,7 +89,7 @@ Honest status, because a demo that overclaims is worse than a small one that doe
 | Cross-session recall | ✅ Verified, including date-relative questions |
 | Installable from the browser (PWA) | ✅ Manifest, icons and service worker in place |
 | Speaker attribution (you / them) | ✅ Two separate streams, no diarization model |
-| Session review screen | ❌ Roadmap — recall works, but you can't browse one meeting on its own |
+| Session review screen | ✅ Master–detail, grouped by date, verified against 40 real sessions |
 | Auth / multi-user | ❌ Out of scope — single-user prototype, RLS off |
 
 ## Stack
@@ -254,8 +254,6 @@ Android, so on a phone the app records your microphone alone.
 Deliberately *not* built yet — the prototype is one complete loop, not many
 incomplete features.
 
-- **Session review** — open any past meeting on its own, see what came out of it,
-  and move around by date rather than only asking questions
 - **Capture the other side of a call** — `getDisplayMedia` tab audio, which also
   yields a rough "them vs me" split without a diarization model
 - **Memory Graph** — link decisions to the requirements and people they touch

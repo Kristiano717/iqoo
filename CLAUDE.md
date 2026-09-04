@@ -126,12 +126,19 @@ Store the result. Don't add extra fields the schema doesn't have a place for.
 
 **Memory recall**: retrieve relevant past `sessions` rows (by recency/date — no vector search, no embeddings), pass their summaries as context, and ask the LLM to answer using only that retrieved context. If the answer isn't in the retrieved context, say so rather than guessing.
 
-## UI (four screens, no more)
+## UI (five screens, no more)
 
 1. **Home** — Start Session.
 2. **Live Session** — live transcript, task tray, session controls.
 3. **Summary Screen** — summary, tasks, key facts.
 4. **Recall Screen** — user asks a question, assistant answers from stored memory.
+5. **Review Screen** — browse past sessions and open one on its own.
+
+> **Deviation, signed off.** The spec said four screens. Review was added
+> because recall could answer questions across meetings but nothing could
+> open a single one — the stored summaries, facts and tasks were only ever
+> reachable through a question. It reads existing rows and adds no capture,
+> no schema and no AI call.
 
 ## In Scope
 
@@ -140,7 +147,7 @@ Store the result. Don't add extra fields the schema doesn't have a place for.
 - Task tray
 - End-of-session AI summary
 - Cross-session memory recall
-- Simple web interface (the four screens above)
+- Simple web interface (the five screens above)
 - Supabase storage
 - FastAPI backend
 - React frontend
