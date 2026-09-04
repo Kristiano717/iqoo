@@ -13,4 +13,8 @@ google-genai==2.22.0
 openai==1.58.1
 
 # Storage — added when Milestone 2 ("save works") wires up persistence.
-supabase==2.10.0
+# Upgraded from 2.10.0: google-genai requires httpx>=0.28.1 while the old
+# supabase pinned httpx<0.28 — a real conflict, not a warning to ignore.
+# It happened to keep working locally, but a fresh install (Render) could
+# resolve it either way.
+supabase==2.31.0
