@@ -29,6 +29,8 @@ function asFallback(speech) {
     error: speech.error,
     start: speech.start,
     stop: speech.stop,
+    // Web Speech can't take a shared stream, so there's nothing to retry.
+    captureRemote: null,
   }
 }
 

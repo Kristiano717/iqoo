@@ -44,6 +44,21 @@ OPENAI_MODEL = "gpt-5"
 # a short-lived token minted by create_live_token() below.
 GEMINI_LIVE_MODEL = "gemini-3.5-transcribe-live"
 
+# Cap on the model's hidden reasoning, and the single biggest lever on how
+# long a session takes to summarise.
+#
+# gemini-3.6-flash is a thinking model. Left unbounded it spent 584-1015
+# thinking tokens to produce ~105 tokens of output — roughly 89% of the work
+# invisible — which measured 15-38s per extraction. Capped at 128 the same
+# call returned in 2s, and the output held up: correct speaker attribution,
+# only the user's own commitment classified as a task, four well-formed facts.
+#
+# 128 is the floor worth using: thinking_budget=0 is rejected outright by
+# this model (400 INVALID_ARGUMENT), so thinking can be bounded but not
+# switched off. Raise it if extraction quality regresses on longer
+# transcripts — 512 measured ~7s and is the next step up.
+GEMINI_THINKING_BUDGET = 128
+
 EXTRACTION_SCHEMA = {
     "type": "object",
     "properties": {
@@ -86,22 +101,24 @@ def _active_provider() -> str:
 
 
 def _call_gemini(system_instruction: str, user_content: str, schema: dict | None) -> str:
-    import google.generativeai as genai
+    from google import genai as google_genai
+    from google.genai import types
 
-    genai.configure(api_key=os.environ["GEMINI_API_KEY"])
-    # Deterministic demo per CLAUDE.md's engineering principles — no
-    # temperature > 0 without a specific reason.
-    config = {"temperature": 0}
-    if schema is not None:
-        config["response_mime_type"] = "application/json"
-        config["response_schema"] = schema
-
-    model = genai.GenerativeModel(
-        GEMINI_MODEL,
+    client = google_genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+    config = types.GenerateContentConfig(
         system_instruction=system_instruction,
-        generation_config=config,
+        # Deterministic demo per CLAUDE.md's engineering principles — no
+        # temperature > 0 without a specific reason.
+        temperature=0,
+        thinking_config=types.ThinkingConfig(thinking_budget=GEMINI_THINKING_BUDGET),
     )
-    return model.generate_content(user_content).text
+    if schema is not None:
+        config.response_mime_type = "application/json"
+        config.response_schema = schema
+
+    return client.models.generate_content(
+        model=GEMINI_MODEL, contents=user_content, config=config
+    ).text
 
 
 def _call_openai(system_instruction: str, user_content: str, schema: dict | None) -> str:

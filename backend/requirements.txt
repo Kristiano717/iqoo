@@ -6,9 +6,11 @@ pydantic==2.10.4
 # AI provider — Gemini free tier for local dev/testing (per CLAUDE.md).
 # Both installed so swapping providers is purely an .env change (see
 # backend/ai.py) — only one's key should actually be set at a time.
-google-generativeai==0.8.3
-# Separate, newer SDK — only it can mint the ephemeral tokens the browser
-# needs to open a Gemini Live socket (see ai.py: create_live_token).
+#
+# google-generativeai (the older SDK) was dropped: it can neither mint the
+# ephemeral tokens the browser needs for a Gemini Live socket, nor set a
+# thinking budget — and the thinking budget is what took extraction from
+# ~25s to ~2s. One SDK does both.
 google-genai==2.22.0
 openai==1.58.1
 

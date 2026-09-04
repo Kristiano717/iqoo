@@ -16,7 +16,7 @@ import Records from '../components/Records.jsx'
 // segment carries who said it. Wake-phrase scanning reads micSegments only —
 // see the note in useLiveTranscript for why the merged stream would break
 // the offset dedupe, and why "Hey Coworker" should be the user's to say.
-export default function LiveSession({ onEnd }) {
+export default function LiveSession({ onEnd, onCancel }) {
   const {
     isSupported,
     isListening,
@@ -29,19 +29,27 @@ export default function LiveSession({ onEnd }) {
     start,
     stop,
     mode,
+    captureRemote,
   } = useTranscript()
   const [tasks, setTasks] = useState([])
   const [saveState, setSaveState] = useState('idle') // idle | saving | error
+  // Capture used to begin the moment this screen mounted, which fired two
+  // browser dialogs back to back with no explanation — and the second one,
+  // the tab picker, has a checkbox that decides whether the other person is
+  // recorded at all. Missing it is the single most likely way a real call
+  // gets half-captured, so the instructions come first and capture starts on
+  // an explicit press.
+  const [phase, setPhase] = useState('ready') // ready | capturing
   // Match start offsets (within the '\n'-joined segments text) already
   // turned into a task — see wakePhrase.js for why re-scanning everything
   // and deduping by offset is what actually handles a phrase split across
   // two finalized chunks without also risking duplicates or runaway captures.
   const seenMatchStartsRef = useRef(new Set())
 
-  useEffect(() => {
-    if (isSupported) start()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSupported])
+  const beginCapture = () => {
+    setPhase('capturing')
+    start()
+  }
 
   useEffect(() => {
     if (micSegments.length === 0) return
@@ -101,6 +109,52 @@ export default function LiveSession({ onEnd }) {
     )
   }
 
+  if (phase === 'ready') {
+    return (
+      <div className="screen">
+        <h1>Live Session</h1>
+        <p className="subtitle">
+          Your microphone is captured directly. The other person's voice comes out of your
+          speakers, not your mic — so it has to be taken from the meeting tab instead.
+        </p>
+
+        <ol className="preflight">
+          <li>
+            <strong>Open the call in another tab</strong> and join it — Google Meet, Zoom on
+            the web, or Teams.
+          </li>
+          <li>
+            Press <strong>Start capture</strong>. Your browser asks for the microphone first,
+            then which tab to share.
+          </li>
+          <li>
+            Choose the <strong>Chrome Tab</strong> option, pick the meeting tab, and tick{' '}
+            <strong>“Also share tab audio”</strong>.
+            <span className="emphasis-note">
+              That checkbox is the whole thing. Without it the call is shared silently and
+              only your own side gets transcribed.
+            </span>
+          </li>
+        </ol>
+
+        <p className="hint">
+          Only the audio is used — the video track is stopped the moment it arrives, and
+          nothing is written to disk. On speakerphone, the other person reaching your
+          microphone as well is detected and dropped rather than transcribed twice.
+        </p>
+
+        <div className="controls-row">
+          <button onClick={beginCapture}>Start capture</button>
+          {onCancel && (
+            <button className="secondary" onClick={onCancel}>
+              Back to Home
+            </button>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="screen">
       <h1>Live Session</h1>
@@ -134,6 +188,15 @@ export default function LiveSession({ onEnd }) {
       </div>
 
       {error && <div className="error-banner">{error}</div>}
+
+      {/* The other side isn't being captured. Offer the fix inline rather
+          than making the user end a working session and start over. */}
+      {isListening && !hasRemote && captureRemote && (
+        <div className="notice share-prompt">
+          <span>Only your side is being recorded.</span>
+          <button type="button" onClick={captureRemote}>Share the meeting tab</button>
+        </div>
+      )}
 
       {saveState === 'empty' && (
         <div className="notice">

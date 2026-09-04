@@ -26,7 +26,9 @@ export default function App() {
           onReview={() => setScreen('review')}
         />
       )}
-      {screen === 'live' && <LiveSession onEnd={handleSessionEnd} />}
+      {screen === 'live' && (
+        <LiveSession onEnd={handleSessionEnd} onCancel={() => setScreen('home')} />
+      )}
       {screen === 'summary' && (
         <Summary
           session={session}

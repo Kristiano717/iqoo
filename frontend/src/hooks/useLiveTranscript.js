@@ -99,6 +99,55 @@ export function useLiveTranscript() {
     setInterimText('')
   }, [])
 
+  // Capturing the other participant is its own step so it can be retried.
+  // Missing the "Also share tab audio" checkbox is the most common way a
+  // real call ends up half-recorded, and making that unrecoverable would
+  // mean throwing away a session that is otherwise working fine.
+  const captureRemote = useCallback(async () => {
+    try {
+      // There's no API for "capture the meeting app", so the user shares
+      // that tab and we take its audio. Video is requested only because
+      // Chrome won't offer tab audio without it, and is stopped on arrival.
+      const displayStream = await navigator.mediaDevices.getDisplayMedia({
+        video: true,
+        audio: true,
+      })
+      streamsRef.current.push(displayStream)
+
+      for (const track of displayStream.getVideoTracks()) track.stop()
+
+      if (displayStream.getAudioTracks().length === 0) {
+        // Succeeded, but silently — this is the checkbox failure, and it
+        // looks identical to success unless we check for the track.
+        for (const track of displayStream.getTracks()) track.stop()
+        setError(
+          'That tab was shared without its audio, so only your side is being captured. ' +
+            'Use "Share the meeting tab" below and tick "Also share tab audio".',
+        )
+        return
+      }
+
+      remoteRef.current = new LiveTranscriber({
+        speaker: 'them',
+        getToken: () => fetchLiveToken(),
+        onInterim: () => {},
+        onFinal: appendFinal,
+        onError: (message) => setError(message),
+      })
+      await remoteRef.current.start(displayStream)
+      setHasRemote(true)
+      setError(null)
+    } catch (err) {
+      // Declining the prompt is a normal choice, not a failure — the session
+      // carries on with the microphone alone.
+      if (err?.name === 'NotAllowedError') {
+        setError('Only your microphone is being captured — the other side was not shared.')
+      } else {
+        setError(`Could not capture the other participant: ${err?.message || err}`)
+      }
+    }
+  }, [appendFinal])
+
   const start = useCallback(async () => {
     setError(null)
     setSegments([])
@@ -109,8 +158,6 @@ export function useLiveTranscript() {
     finalTextRef.current = ''
     setFinalText('')
     recentRemoteRef.current = []
-
-    const getToken = () => fetchLiveToken()
 
     try {
       // Microphone. echoCancellation is the whole reason we capture this
@@ -129,7 +176,7 @@ export function useLiveTranscript() {
 
       micRef.current = new LiveTranscriber({
         speaker: 'you',
-        getToken,
+        getToken: () => fetchLiveToken(),
         onInterim: (text) => setInterimText(text),
         onFinal: appendFinal,
         onError: (message) => setError(message),
@@ -143,46 +190,8 @@ export function useLiveTranscript() {
       return
     }
 
-    try {
-      // The other participant. There's no API for "capture the meeting app",
-      // so the user shares that tab and we take its audio; the video track is
-      // requested only because Chrome won't offer tab audio without it, and
-      // is stopped immediately below.
-      const displayStream = await navigator.mediaDevices.getDisplayMedia({
-        video: true,
-        audio: true,
-      })
-      streamsRef.current.push(displayStream)
-
-      for (const track of displayStream.getVideoTracks()) track.stop()
-
-      if (displayStream.getAudioTracks().length === 0) {
-        setError(
-          'That tab was shared without its audio, so only your side will be captured. ' +
-            'End the session and start again, ticking "Also share tab audio".',
-        )
-        return
-      }
-
-      remoteRef.current = new LiveTranscriber({
-        speaker: 'them',
-        getToken,
-        onInterim: () => {},
-        onFinal: appendFinal,
-        onError: (message) => setError(message),
-      })
-      await remoteRef.current.start(displayStream)
-      setHasRemote(true)
-    } catch (err) {
-      // Declining the share prompt is a normal choice, not a failure — the
-      // session continues with the microphone alone.
-      if (err?.name === 'NotAllowedError') {
-        setError('Only your microphone is being captured — the other side was not shared.')
-      } else {
-        setError(`Could not capture the other participant: ${err?.message || err}`)
-      }
-    }
-  }, [appendFinal])
+    await captureRemote()
+  }, [appendFinal, captureRemote])
 
   useEffect(() => stop, [stop])
 
@@ -198,5 +207,6 @@ export function useLiveTranscript() {
     error,
     start,
     stop,
+    captureRemote,
   }
 }
