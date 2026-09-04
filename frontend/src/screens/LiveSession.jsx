@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useSpeechTranscript } from '../hooks/useSpeechTranscript.js'
+import { useTranscript } from '../hooks/useTranscript.js'
 import { saveSession, saveTasks } from '../api.js'
 import { findAllWakePhraseMatches } from '../wakePhrase.js'
 import Records from '../components/Records.jsx'
@@ -11,20 +11,25 @@ import Records from '../components/Records.jsx'
 // Matches populate the task tray immediately; the tray is only POSTed to
 // the backend once, at End Session, alongside the transcript.
 //
-// Transcription is the browser's Web Speech API, per CLAUDE.md's locked
-// stack. Nothing here touches the recognizer directly — it only consumes
-// finalSegments, so swapping the engine later stays a one-import change.
+// Both sides of the call are transcribed: the microphone and the other
+// participant's audio run as two separate Gemini Live sessions, so every
+// segment carries who said it. Wake-phrase scanning reads micSegments only —
+// see the note in useLiveTranscript for why the merged stream would break
+// the offset dedupe, and why "Hey Coworker" should be the user's to say.
 export default function LiveSession({ onEnd }) {
   const {
     isSupported,
     isListening,
+    hasRemote,
+    segments,
+    micSegments,
     finalText,
-    finalSegments,
     interimText,
     error,
     start,
     stop,
-  } = useSpeechTranscript()
+    mode,
+  } = useTranscript()
   const [tasks, setTasks] = useState([])
   const [saveState, setSaveState] = useState('idle') // idle | saving | error
   // Match start offsets (within the '\n'-joined segments text) already
@@ -39,8 +44,8 @@ export default function LiveSession({ onEnd }) {
   }, [isSupported])
 
   useEffect(() => {
-    if (finalSegments.length === 0) return
-    const joined = finalSegments.join('\n')
+    if (micSegments.length === 0) return
+    const joined = micSegments.join('\n')
     const newTasks = []
     for (const match of findAllWakePhraseMatches(joined)) {
       if (!seenMatchStartsRef.current.has(match.start)) {
@@ -49,7 +54,7 @@ export default function LiveSession({ onEnd }) {
       }
     }
     if (newTasks.length > 0) setTasks((prev) => [...prev, ...newTasks])
-  }, [finalSegments])
+  }, [micSegments])
 
   const handleEnd = async () => {
     stop()
@@ -89,7 +94,8 @@ export default function LiveSession({ onEnd }) {
       <div className="screen">
         <h1>Live Session</h1>
         <div className="error-banner">
-          This browser doesn't support the Web Speech API. Open the app in Chrome or Edge.
+          This browser can't capture call audio. Open the app in desktop Chrome or Edge —
+          sharing another tab's audio isn't available on mobile browsers.
         </div>
       </div>
     )
@@ -104,14 +110,30 @@ export default function LiveSession({ onEnd }) {
           {isListening ? 'recording' : 'stopped'}
         </span>
         <span className="spacer" />
+        <span className={`source-tag ${hasRemote ? 'on' : ''}`}>
+          {hasRemote ? 'both sides' : mode === 'fallback' ? 'fallback · mic only' : 'your mic only'}
+        </span>
       </div>
 
       <div className="transcript-box">
-        {finalText || <span className="placeholder">Start speaking…</span>}
-        {interimText && <span className="interim">{finalText ? ' ' : ''}{interimText}</span>}
+        {segments.length === 0 && !interimText && (
+          <span className="placeholder">Start speaking…</span>
+        )}
+        {segments.map((segment, i) => (
+          <p key={i} className={`line ${segment.speaker}`}>
+            <span className="who">{segment.speaker === 'you' ? 'You' : 'Them'}</span>
+            {segment.text}
+          </p>
+        ))}
+        {interimText && (
+          <p className="line you interim-line">
+            <span className="who">You</span>
+            <span className="interim">{interimText}</span>
+          </p>
+        )}
       </div>
 
-      {error && <div className="error-banner">Speech recognition error: {error}</div>}
+      {error && <div className="error-banner">{error}</div>}
 
       {saveState === 'empty' && (
         <div className="notice">

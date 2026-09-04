@@ -49,7 +49,8 @@ that already doesn't work.
 
 ```mermaid
 flowchart LR
-  A[Speech] -->|Web Speech API| B[Live transcript]
+  A[Your mic] -->|Gemini Live| B[Live transcript<br/>speaker-labelled]
+  A2[Their audio - shared tab] -->|Gemini Live| B
   B -->|regex, client-side| C[Wake phrase - task tray]
   B -->|once, at session end| D[LLM extraction]
   D -->|summary + tasks + facts| E[(Supabase)]
@@ -81,12 +82,13 @@ Honest status, because a demo that overclaims is worse than a small one that doe
 
 | | |
 |---|---|
-| Live transcription | ✅ Verified (Chrome/Edge, Web Speech API) |
+| Live transcription, both sides | ⚠️ Built and building clean; needs a real two-party call to confirm |
 | Wake-phrase → task tray | ✅ Verified, handles phrases split across pauses |
 | End-of-session extraction | ✅ Verified against live Gemini |
 | Supabase persistence | ✅ Verified |
 | Cross-session recall | ✅ Verified, including date-relative questions |
 | Installable from the browser (PWA) | ✅ Manifest, icons and service worker in place |
+| Speaker attribution (you / them) | ✅ Two separate streams, no diarization model |
 | Session review screen | ❌ Roadmap — recall works, but you can't browse one meeting on its own |
 | Auth / multi-user | ❌ Out of scope — single-user prototype, RLS off |
 
@@ -95,7 +97,7 @@ Honest status, because a demo that overclaims is worse than a small one that doe
 | Layer | Choice | Why |
 |---|---|---|
 | Frontend | React + Vite | Four screens, state-based switching — no router needed |
-| Transcription | Web Speech API | Browser-native, zero latency, zero infra |
+| Transcription | `gemini-3.5-transcribe-live` | Realtime, free tier, and accepts a raw stream — which is what makes capturing the other participant possible |
 | Backend | FastAPI | Five routes; `/docs` gives a live API explorer |
 | AI | `gemini-3.6-flash`, `temperature: 0` | Structured output via `response_schema` enforces the JSON contract |
 | Database | Supabase | Postgres without running Postgres |
@@ -108,8 +110,13 @@ than string literals — so swapping models is a one-file change and the
 Temperature is pinned to `0` everywhere. A demo that answers differently on the
 second run isn't a demo.
 
+**[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** is the system design: the two
+audio paths, why audio bypasses the backend, how echo and session expiry are
+handled, and the request lifecycle for every route.
+
 ```
 backend/     FastAPI app, Supabase client, LLM calls, demo seeder
+docs/        system design
 frontend/    React + Vite, four screens, PWA manifest
 database/    schema.sql
 prompts/     extraction + recall prompts
@@ -119,8 +126,9 @@ prompts/     extraction + recall prompts
 
 ## Quickstart
 
-Requires **Node 18+**, **Python 3.11+**, and a Chromium browser (Chrome or Edge —
-the Web Speech API doesn't exist in Firefox or Safari).
+Requires **Node 18+**, **Python 3.11+**, and desktop **Chrome or Edge** —
+capturing another tab's audio needs `getDisplayMedia` with audio, which Firefox
+and Safari don't support.
 
 **1. Backend**
 
@@ -230,9 +238,13 @@ utterance. `useSpeechTranscript` restarts it on `end` with a short delay —
 restarting synchronously races the teardown, throws `InvalidStateError`, and the
 transcript dies after one sentence.
 
-**Web Speech captures your microphone only.** In-person meetings work fully. On a
-video call, other participants come out of your speakers rather than your mic, so
-only you get transcribed — put the call on speaker, or see the roadmap.
+**The other participant needs their tab shared.** Their audio reaches you through
+your speakers, not your microphone, so the app asks you to share the meeting tab
+**with "Also share tab audio" ticked**. Sharing without it silently succeeds and
+captures only your side — the app detects this and says so.
+
+**Both-sides capture is desktop-only.** `getDisplayMedia` audio doesn't exist on
+Android, so on a phone the app records your microphone alone.
 
 **Speech needs a secure context.** `localhost` and `https://` work;
 `http://192.168.x.x` is refused outright by the browser.

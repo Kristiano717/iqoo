@@ -564,3 +564,48 @@ details[open] > summary { margin-bottom: var(--gap-sm); }
     transition: none !important;
   }
 }
+
+/* ---------- speaker-labelled transcript ---------- */
+
+.source-tag {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.16rem 0.55rem;
+  color: var(--text-faint);
+  white-space: nowrap;
+  font-size: 0.68rem;
+  font-family: var(--mono);
+}
+
+/* Only tinted once the other participant's audio is actually flowing — the
+   likeliest failure is a tab shared without its audio, and that should look
+   different from a working capture rather than identical. */
+.source-tag.on {
+  color: var(--accent);
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+}
+
+.transcript-box .line {
+  margin: 0 0 0.55rem;
+  display: grid;
+  grid-template-columns: 3.4rem 1fr;
+  gap: 0.6rem;
+  align-items: baseline;
+}
+
+.transcript-box .line .who {
+  font-family: var(--mono);
+  font-size: 0.64rem;
+  text-transform: uppercase;
+  letter-spacing: 0.11em;
+  color: var(--text-faint);
+  text-align: right;
+}
+
+/* The other participant is the accent colour, not the user — in a recording
+   of your own meeting, their words are the ones you scan for. */
+.transcript-box .line.them .who { color: var(--accent); }
+.transcript-box .line.them { color: var(--text); }
+.transcript-box .line.you { color: var(--text-dim, var(--text)); }
+.transcript-box .interim-line { opacity: 0.75; }

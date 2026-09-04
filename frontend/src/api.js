@@ -18,6 +18,17 @@
 // uvicorn printed.
 const API_BASE = '/api'
 
+export async function fetchLiveToken() {
+  // One token per WebSocket, requested immediately before connecting — they
+  // are single-use and expire in minutes, so they can't be cached.
+  const res = await fetch(`${API_BASE}/live-token`, { method: 'POST' })
+  if (!res.ok) {
+    const body = await res.text()
+    throw new Error(`Could not start live transcription (${res.status}): ${body}`)
+  }
+  return res.json() // { token, model }
+}
+
 export async function saveSession(transcript) {
   const res = await fetch(`${API_BASE}/sessions`, {
     method: 'POST',
