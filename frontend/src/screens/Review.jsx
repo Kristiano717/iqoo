@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { fetchSession, fetchSessions } from '../api.js'
 import Records from '../components/Records.jsx'
 import Markdown from '../components/Markdown.jsx'
+import DateCalendar from '../components/DateCalendar.jsx'
 
 // Browse past meetings one at a time.
 //
@@ -194,6 +195,13 @@ export default function Review({ onBack }) {
                     never ran.
                   </p>
                 )}
+
+                {/* Resolved against when the meeting happened, not today —
+                    "Friday" in an old session means that Friday. */}
+                <DateCalendar
+                  records={[...detail.tasks, ...detail.facts]}
+                  sessionAt={detail.timestamp}
+                />
 
                 <Records items={detail.tasks} kind="task" label="Tasks" empty="None extracted." />
                 <Records items={detail.facts} kind="fact" label="Key facts" empty="None extracted." />

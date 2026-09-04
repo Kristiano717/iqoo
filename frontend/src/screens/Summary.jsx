@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { summarizeSession } from '../api.js'
 import Records from '../components/Records.jsx'
+import DateCalendar from '../components/DateCalendar.jsx'
 
 // Milestone 4 ("summary works"): calls the backend's single end-of-session
 // LLM extraction once this screen mounts. Kept here rather than in
@@ -79,6 +80,14 @@ export default function Summary({ session, onRestart, onRecall }) {
       {aiState === 'done' && (
         <>
           <p>{aiResult.summary}</p>
+
+          {/* Reference is now: Summary is only ever shown for a session that
+              just ended, and LiveSession's onEnd payload carries no
+              timestamp. Renders nothing when no record names a real day. */}
+          <DateCalendar
+            records={[...aiResult.tasks, ...aiResult.facts]}
+            sessionAt={Date.now()}
+          />
 
           <Records items={aiResult.tasks} kind="task" label="Tasks" empty="None extracted." />
           <Records items={aiResult.facts} kind="fact" label="Key facts" empty="None extracted." />
