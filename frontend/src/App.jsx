@@ -10,6 +10,15 @@ import Review from './screens/Review.jsx'
 // dependency (CLAUDE.md: avoid unnecessary abstractions).
 export default function App() {
   const [screen, setScreen] = useState('home')
+  // Lets other screens open a specific meeting rather than dropping the user
+  // at an unselected list — used by the agenda, and by anything else that
+  // wants to point at where a commitment came from.
+  const [reviewSessionId, setReviewSessionId] = useState(null)
+
+  const openSession = (id) => {
+    setReviewSessionId(id)
+    setScreen('review')
+  }
   const [session, setSession] = useState({ transcript: '', sessionId: null, saveError: null })
 
   const handleSessionEnd = (result) => {
@@ -31,7 +40,11 @@ export default function App() {
         <Home
           onStart={() => setScreen('live')}
           onRecall={() => setScreen('recall')}
-          onReview={() => setScreen('review')}
+          onReview={() => {
+            setReviewSessionId(null)
+            setScreen('review')
+          }}
+          onOpenSession={openSession}
         />
       )}
       {screen === 'live' && (
@@ -45,7 +58,9 @@ export default function App() {
         />
       )}
       {screen === 'recall' && <Recall onBack={() => setScreen('home')} />}
-      {screen === 'review' && <Review onBack={() => setScreen('home')} />}
+      {screen === 'review' && (
+        <Review onBack={() => setScreen('home')} initialSessionId={reviewSessionId} />
+      )}
     </div>
   )
 }

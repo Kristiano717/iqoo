@@ -1031,3 +1031,84 @@ details > *:not(summary) { margin-top: var(--gap-sm); }
 @media (max-width: 560px) {
   .cal-items li { grid-template-columns: minmax(0, 1fr); gap: 0.25rem; }
 }
+
+/* ---------- agenda ---------- */
+
+.agenda { display: flex; flex-direction: column; gap: var(--gap-sm); }
+
+.agenda-days {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+/* A day and its commitments read as one row: the date column is a fixed
+   rail so the eye can run down it without re-finding the left edge. */
+.agenda-days > li {
+  display: grid;
+  grid-template-columns: 8.5rem 1fr;
+  gap: var(--gap-sm);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 0.8rem 0.9rem;
+}
+
+.agenda-days > li:first-child { border-radius: var(--radius) var(--radius) 0 0; }
+.agenda-days > li:last-child { border-radius: 0 0 var(--radius) var(--radius); }
+.agenda-days > li:only-child { border-radius: var(--radius); }
+.agenda-days > li + li { border-top: none; }
+
+.agenda-when { display: flex; flex-direction: column; gap: 0.1rem; }
+
+.agenda-rel {
+  font-size: 0.92rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+.agenda-date {
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.agenda-items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+
+/* The whole line is the target: every commitment can be traced back to the
+   meeting that made it. */
+.agenda-items button {
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.2rem 0.35rem;
+  margin: -0.2rem -0.35rem;
+  border-radius: var(--radius-sm);
+  transition: background 140ms var(--ease);
+}
+
+.agenda-items button:hover { background: var(--surface-sunk); }
+.agenda-items button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.agenda-text { font-size: 0.93rem; line-height: 1.45; color: var(--text); }
+
+.agenda-source {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-faint);
+}
+
+@media (max-width: 560px) {
+  .agenda-days > li { grid-template-columns: minmax(0, 1fr); gap: 0.45rem; }
+  .agenda-when { flex-direction: row; align-items: baseline; gap: 0.5rem; }
+}

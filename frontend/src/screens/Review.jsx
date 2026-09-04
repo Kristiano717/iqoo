@@ -63,7 +63,7 @@ function groupByDay(sessions) {
   return groups
 }
 
-export default function Review({ onBack }) {
+export default function Review({ onBack, initialSessionId = null }) {
   const [sessions, setSessions] = useState([])
   const [listState, setListState] = useState('loading') // loading | done | error
   const [error, setError] = useState(null)
@@ -80,6 +80,11 @@ export default function Review({ onBack }) {
         if (cancelled) return
         setSessions(rows)
         setListState('done')
+        // Opened from a commitment elsewhere: show that meeting immediately
+        // rather than making the user find it in the list.
+        if (initialSessionId && rows.some((r) => r.id === initialSessionId)) {
+          select(initialSessionId)
+        }
       })
       .catch((err) => {
         if (cancelled) return
@@ -145,8 +150,8 @@ export default function Review({ onBack }) {
                     <span className="session-label">{labelFor(session)}</span>
                     <span className="session-meta">
                       {timeOf(session.timestamp)}
-                      {session.task_count > 0 && ` · ${session.task_count} task${session.task_count === 1 ? '' : 's'}`}
-                      {session.fact_count > 0 && ` · ${session.fact_count} fact${session.fact_count === 1 ? '' : 's'}`}
+                      {session.tasks.length > 0 && ` · ${session.tasks.length} task${session.tasks.length === 1 ? '' : 's'}`}
+                      {session.facts.length > 0 && ` · ${session.facts.length} fact${session.facts.length === 1 ? '' : 's'}`}
                     </span>
                   </button>
                 ))}

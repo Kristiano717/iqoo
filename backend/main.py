@@ -204,27 +204,36 @@ def list_sessions():
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Failed to load sessions: {exc}")
 
-    # One query for every task, counted in Python, rather than a count query
-    # per session — at this scale the round trips cost far more than the rows.
+    # One query for every task rather than a count query per session — at this
+    # scale the round trips cost far more than the rows.
+    #
+    # The task *text* comes back rather than just a count, and facts were
+    # already being selected. Both are short strings, unlike transcripts, and
+    # sending them lets the client find the dates a session committed to
+    # without a second request per session. Counts are derived client-side.
     ids = [r["id"] for r in rows]
-    task_counts: dict[str, int] = {}
+    tasks_by_session: dict[str, list[str]] = {}
     if ids:
         try:
             task_rows = (
-                get_client().table("tasks").select("session_id").in_("session_id", ids).execute()
+                get_client()
+                .table("tasks")
+                .select("session_id,text")
+                .in_("session_id", ids)
+                .execute()
             ).data
             for t in task_rows:
-                task_counts[t["session_id"]] = task_counts.get(t["session_id"], 0) + 1
+                tasks_by_session.setdefault(t["session_id"], []).append(t["text"])
         except Exception as exc:
-            raise HTTPException(status_code=502, detail=f"Failed to count tasks: {exc}")
+            raise HTTPException(status_code=502, detail=f"Failed to load tasks: {exc}")
 
     return [
         {
             "id": r["id"],
             "timestamp": r["timestamp"],
             "summary": r.get("summary"),
-            "task_count": task_counts.get(r["id"], 0),
-            "fact_count": len(r.get("facts") or []),
+            "tasks": tasks_by_session.get(r["id"], []),
+            "facts": r.get("facts") or [],
         }
         for r in rows
     ]

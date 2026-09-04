@@ -2,7 +2,9 @@
 // speech goes in, structured records come out. The panels below say that
 // with the product's own materials rather than describing it in prose —
 // the sample lines are illustrative, not anyone's real meeting.
-export default function Home({ onStart, onRecall, onReview }) {
+import Agenda from '../components/Agenda.jsx'
+
+export default function Home({ onStart, onRecall, onReview, onOpenSession }) {
   return (
     <div className="screen home">
       <div className="hero">
@@ -19,6 +21,10 @@ export default function Home({ onStart, onRecall, onReview }) {
           <button className="ghost" onClick={onRecall}>Ask about past sessions →</button>
         </div>
       </div>
+
+      {/* Real commitments, when there are any. Renders nothing on a fresh
+          install, so Home stays a landing page until there's memory to show. */}
+      <Agenda onOpenSession={onOpenSession} />
 
       {/* The thesis, shown rather than claimed. */}
       <div className="transform" aria-hidden="true">
