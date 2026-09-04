@@ -15,7 +15,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from ai import answer_recall, generate_summary
+from ai import answer_recall, create_live_token, generate_summary
 from db import get_client
 
 # How many past sessions to pull into the recall context. Retrieval is by
@@ -42,6 +42,29 @@ app.add_middleware(
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.post("/live-token")
+def live_token():
+    """Hands the browser a short-lived credential for one Gemini Live socket.
+
+    Audio goes straight from the browser to Gemini rather than through this
+    backend — proxying it would add a network hop to every 20ms of audio and
+    throw away the sub-second latency that makes live transcription feel
+    live. The cost is that the browser needs a credential, so this mints an
+    ephemeral, single-use one instead of ever shipping GEMINI_API_KEY.
+
+    Called once per socket: two at the start of a session (microphone and
+    the other participant), then once more per reconnect.
+    """
+    try:
+        return create_live_token()
+    except RuntimeError as exc:
+        # Configuration problem (wrong provider, no key) — the caller can't
+        # fix it by retrying, so say what's wrong rather than returning 502.
+        raise HTTPException(status_code=503, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Could not mint a live token: {exc}")
 
 
 class SaveSessionRequest(BaseModel):

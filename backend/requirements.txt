@@ -7,6 +7,9 @@ pydantic==2.10.4
 # Both installed so swapping providers is purely an .env change (see
 # backend/ai.py) — only one's key should actually be set at a time.
 google-generativeai==0.8.3
+# Separate, newer SDK — only it can mint the ephemeral tokens the browser
+# needs to open a Gemini Live socket (see ai.py: create_live_token).
+google-genai==2.22.0
 openai==1.58.1
 
 # Storage — added when Milestone 2 ("save works") wires up persistence.

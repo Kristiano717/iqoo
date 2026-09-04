@@ -25,7 +25,7 @@ up, but are UNVERIFIED — this environment has no OPENAI_API_KEY to test.
 
 import json
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -36,6 +36,13 @@ PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
 
 GEMINI_MODEL = "gemini-3.6-flash"
 OPENAI_MODEL = "gpt-5"
+
+# Realtime speech-to-text, used for live transcription of both sides of a
+# call. Separate from GEMINI_MODEL: it's a dedicated STT model that holds a
+# bidirectional WebSocket rather than answering one-shot prompts, and it's
+# free on the Gemini free tier. The browser connects to it directly, using
+# a short-lived token minted by create_live_token() below.
+GEMINI_LIVE_MODEL = "gemini-3.5-transcribe-live"
 
 EXTRACTION_SCHEMA = {
     "type": "object",
@@ -168,3 +175,59 @@ def answer_recall(question: str, sessions: list[dict]) -> str:
         f"Question: {question}"
     )
     return _call_llm(RECALL_INSTRUCTION, user_content, schema=None).strip()
+
+
+# ---------------------------------------------------------------------------
+# Realtime transcription tokens
+# ---------------------------------------------------------------------------
+
+# How long a minted token stays usable for sending audio. Live sessions cap
+# at 10 minutes, so this gives comfortable headroom for one full session
+# without leaving a long-lived credential lying around.
+LIVE_TOKEN_TTL_MINUTES = 20
+
+# How long the browser has to actually open the socket after asking for a
+# token. Short on purpose: the frontend requests one immediately before
+# connecting, so anything longer is just a wider window for a leaked token.
+LIVE_TOKEN_START_WINDOW_MINUTES = 2
+
+
+def create_live_token() -> dict:
+    """Mints a short-lived token for one Gemini Live WebSocket connection.
+
+    The browser connects to Gemini directly — audio never round-trips
+    through this backend, which is what keeps latency at sub-second. That
+    means the browser needs a credential, and it must not be
+    GEMINI_API_KEY. Ephemeral tokens exist for exactly this: they're
+    scoped to a single session and expire in minutes.
+
+    Deliberately `uses=1`, one token per connection. A call has two audio
+    sources (microphone and the other participant), and each Live session
+    is capped at 10 minutes, so the frontend asks for a fresh token per
+    socket rather than sharing one — a token that can open N sessions is a
+    token worth stealing.
+    """
+    provider = _active_provider()
+    if provider != "gemini":
+        raise RuntimeError(
+            f"Live transcription needs the Gemini provider, but {provider} is "
+            "configured. Set GEMINI_API_KEY in backend/.env."
+        )
+
+    from google import genai as google_genai
+
+    client = google_genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+    now = datetime.now(timezone.utc)
+    token = client.auth_tokens.create(
+        config={
+            "uses": 1,
+            "expire_time": now + timedelta(minutes=LIVE_TOKEN_TTL_MINUTES),
+            "new_session_expire_time": now
+            + timedelta(minutes=LIVE_TOKEN_START_WINDOW_MINUTES),
+        }
+    )
+
+    # The model name travels with the token so the browser never hardcodes
+    # it — swapping STT models stays a backend-only change, matching how
+    # GEMINI_MODEL works for the one-shot calls.
+    return {"token": token.name, "model": GEMINI_LIVE_MODEL}
