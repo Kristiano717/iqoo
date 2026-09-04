@@ -16,3 +16,9 @@ backend/.env
 # OS / editor
 .DS_Store
 .vscode/
+
+# Throwaway measurement/verification scripts. They have to live inside the
+# package to resolve imports, so they can't sit in a temp dir.
+backend/_*.py
+frontend/*-check.mjs
+frontend/*-test.mjs
