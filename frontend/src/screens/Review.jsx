@@ -21,9 +21,15 @@ function labelFor(session) {
     // than an empty row — these exist in real data.
     return timeOf(session.timestamp)
   }
-  // First sentence, trimmed to something that fits a sidebar.
-  const firstSentence = summary.split(/(?<=[.!?])\s/)[0] || summary
-  return firstSentence.length > 58 ? `${firstSentence.slice(0, 55).trimEnd()}…` : firstSentence
+  // First sentence, minus the opening the model almost always reaches for.
+  // Left in, every row in the list begins "The speaker requested…" and the
+  // sidebar stops distinguishing one meeting from another.
+  let label = (summary.split(/(?<=[.!?])\s/)[0] || summary).replace(
+    /^(?:the\s+(?:speaker|user|meeting|session|discussion|participants?)|this\s+(?:meeting|session))\s+/i,
+    '',
+  )
+  label = label.charAt(0).toUpperCase() + label.slice(1)
+  return label.length > 58 ? `${label.slice(0, 55).trimEnd()}…` : label
 }
 
 function timeOf(ts) {

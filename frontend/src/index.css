@@ -238,7 +238,7 @@ button:disabled { opacity: 0.45; cursor: default; transform: none; }
    moment, with air above the headline and the primary action isolated. */
 .home {
   gap: var(--gap-lg);
-  padding: clamp(1rem, 7vh, 4.5rem) 0 var(--gap-lg);
+  padding: clamp(0.25rem, 2.5vh, 1.5rem) 0 var(--gap-lg);
 }
 
 .home h1 { max-width: 14ch; }
@@ -445,17 +445,22 @@ button:disabled { opacity: 0.45; cursor: default; transform: none; }
   gap: var(--gap);
 }
 
+/* NOT display:grid. These items mix inline text with <strong> and <span>,
+   and a grid container turns every loose text node into its own grid item —
+   which lands whole words in the 1.8rem number column, one per line. The
+   marker is positioned out of flow instead so the text stays inline. */
 .preflight li {
   counter-increment: step;
-  display: grid;
-  grid-template-columns: 1.8rem 1fr;
-  gap: 0.85rem;
-  align-items: start;
-  line-height: 1.55;
+  position: relative;
+  padding-left: 2.7rem;
+  line-height: 1.6;
 }
 
 .preflight li::before {
   content: counter(step);
+  position: absolute;
+  left: 0;
+  top: 0.05rem;
   font-family: var(--mono);
   font-size: 0.72rem;
   color: var(--text-faint);
@@ -732,4 +737,187 @@ details > *:not(summary) { margin-top: var(--gap-sm); }
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
+}
+
+/* ---------- app bar ---------- */
+
+.app-bar {
+  display: flex;
+  align-items: center;
+  margin-bottom: var(--gap-lg);
+}
+
+.wordmark {
+  all: unset;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 550;
+  letter-spacing: -0.008em;
+  color: var(--text);
+  padding: 0.3rem 0;
+}
+
+.wordmark:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+.wordmark:hover .mark { transform: scale(1.12); }
+
+/* Three bars, decreasing — the same mark as the app icon: two plain lines
+   of speech and one that got kept. */
+.mark {
+  width: 15px;
+  height: 13px;
+  flex: none;
+  transition: transform 200ms var(--ease);
+  background:
+    linear-gradient(var(--text-faint) 0 0) 0 0 / 100% 3px no-repeat,
+    linear-gradient(var(--accent) 0 0) 0 5px / 72% 3px no-repeat,
+    linear-gradient(var(--text-faint) 0 0) 0 10px / 44% 3px no-repeat;
+}
+
+/* ---------- landing ---------- */
+
+.home { gap: var(--gap-xl); padding-bottom: var(--gap-lg); }
+
+.hero { display: flex; flex-direction: column; gap: var(--gap); }
+
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--text-faint);
+}
+
+.home h1 { max-width: 16ch; }
+.home .subtitle { font-size: clamp(1.08rem, 2.3vw, 1.3rem); max-width: 32em; }
+
+/* A text button that still reads as an action — one primary, everything
+   else quieter, rather than three pills competing. */
+.ghost {
+  all: unset;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: -0.011em;
+  color: var(--text-muted);
+  padding: 0.72rem 0.4rem;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  transition: color 160ms var(--ease);
+}
+
+.ghost:hover { color: var(--accent); }
+.ghost:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: var(--radius-xs); }
+
+/* ---------- the transformation ---------- */
+
+.transform {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: var(--gap);
+  align-items: stretch;
+}
+
+.tf-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--gap);
+  box-shadow: var(--shadow);
+}
+
+/* The right panel is where the product's value lands, so it gets the lift
+   and the left one stays deliberately plainer. */
+.tf-kept { box-shadow: var(--shadow-lift); border-color: var(--border-strong); }
+
+.tf-label {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.13em;
+  color: var(--text-faint);
+  margin-bottom: 0.2rem;
+}
+
+.tf-line {
+  display: grid;
+  grid-template-columns: 2.9rem 1fr;
+  gap: 0.6rem;
+  align-items: baseline;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.tf-line .who {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  text-align: right;
+  color: var(--text-faint);
+}
+
+.tf-line .who.them { color: var(--accent); }
+
+.tf-record {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.6rem;
+  align-items: baseline;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.tf-record .tag { font-style: normal; }
+.tf-record .tag.fact { color: var(--fact); background: var(--fact-soft); }
+.tf-record .tag.task { color: var(--task); background: var(--task-soft); }
+
+.tf-arrow {
+  display: grid;
+  place-items: center;
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.13em;
+  color: var(--text-faint);
+  position: relative;
+}
+
+.tf-arrow span {
+  background: var(--bg);
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  width: 2rem;
+  height: 2rem;
+  display: grid;
+  place-items: center;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  letter-spacing: 0;
+}
+
+.tf-arrow::before {
+  content: "";
+  position: absolute;
+  inset: 0 50%;
+  border-left: 1px dashed var(--border-strong);
+}
+
+/* ---------- landing footer ---------- */
+
+.home-foot { padding-top: var(--gap); border-top: 1px solid var(--border); }
+
+@media (max-width: 760px) {
+  .transform { grid-template-columns: minmax(0, 1fr); }
+  .tf-arrow { padding: 0.2rem 0; }
+  .tf-arrow span { transform: rotate(90deg); }
+  .tf-arrow::before { inset: 50% 0; border-left: none; border-top: 1px dashed var(--border-strong); }
 }

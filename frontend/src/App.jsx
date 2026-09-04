@@ -19,6 +19,14 @@ export default function App() {
 
   return (
     <div className="app-shell">
+      {/* Persistent wordmark: gives every screen a way home and stops the
+          app reading as a sequence of disconnected pages. */}
+      <header className="app-bar">
+        <button className="wordmark" onClick={() => setScreen('home')}>
+          <span className="mark" aria-hidden="true" />
+          Second Coworker
+        </button>
+      </header>
       {screen === 'home' && (
         <Home
           onStart={() => setScreen('live')}
