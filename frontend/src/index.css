@@ -1,105 +1,109 @@
 /* Second Coworker — app styles.
  *
- * Direction: a precision instrument with a document inside it. The product
- * turns speech into *records*, so captured memory is styled as tagged
- * entries rather than prose, and the live session reads like equipment —
- * mono readouts, tabular figures, a hard-edged status bar.
+ * Direction: quiet, confident product surface. The app turns speech into
+ * *records*, so two registers run against each other — a large, tightly
+ * tracked interface voice for everything a person reads, and a small mono
+ * voice for everything the machine reports (status, counts, timestamps).
+ * Colour is nearly absent; the amber accent marks state and nothing else.
  *
- * Two constraints:
- *   1. Nothing loads from a network. The display face is vendored into
- *      public/fonts, not pulled from Google, because the product's claim is
- *      that it works with the radio off.
- *   2. Mobile first. The demo surface is a phone: layout starts narrow,
- *      controls clear 44px, nothing depends on hover.
+ * On the font: it used to be vendored into public/fonts on the grounds that
+ * the product "works with the radio off". That stopped being true when live
+ * transcription moved to a hosted model — the app cannot function offline
+ * at all now — so the constraint went with it.
+ *
+ * Mobile still comes first: layout starts narrow, controls clear 44px, and
+ * nothing depends on hover.
  */
-
-@font-face {
-  font-family: "Bricolage";
-  src: url("/fonts/bricolage-latin.woff2") format("woff2");
-  font-weight: 400 800;
-  font-display: swap;
-  font-style: normal;
-}
 
 :root {
   color-scheme: light dark;
 
-  /* Neutrals sit slightly cool-blue so the amber accent has something to
-     push against; a flat grey would make the accent look arbitrary. */
-  --bg: #f4f4f2;
-  --bg-deep: #e9e9e6;
+  /* Near-white rather than white, and near-black rather than black: flat
+     #fff/#000 make the surfaces above them disappear. */
+  --bg: #fbfbfd;
+  --bg-deep: #f2f2f5;
   --surface: #ffffff;
-  --surface-sunk: #eeeeeb;
-  --border: #dedcd7;
-  --border-strong: #c4c1ba;
+  --surface-sunk: #f5f5f7;
+  --border: #e3e3e8;
+  --border-strong: #c9c9d0;
 
-  --text: #16181d;
-  --text-muted: #565a63;
-  --text-faint: #8a8d94;
+  --text: #1d1d1f;
+  --text-muted: #57575d;
+  --text-faint: #86868b;
 
-  --accent: #9c5d00;
-  --accent-bright: #b06a00;
-  --accent-soft: #f9eeda;
-  --accent-line: #e2c489;
+  --accent: #a35a00;
+  --accent-bright: #c26c00;
+  --accent-soft: #fdf3e5;
+  --accent-line: #e8cfa4;
 
-  --live: #c8382c;
-  --live-glow: rgba(200, 56, 44, 0.4);
+  --live: #d0342c;
+  --live-glow: rgba(208, 52, 44, 0.35);
 
-  --task: #1e6b4a;
-  --task-soft: #e2f1ea;
-  --fact: #2c5578;
-  --fact-soft: #e4edf5;
+  --task: #16704a;
+  --task-soft: #e6f3ed;
+  --fact: #29527a;
+  --fact-soft: #e7eef6;
 
-  --bad: #a02a26;
-  --bad-soft: #fbeeed;
+  --bad: #b0322c;
+  --bad-soft: #fcefee;
 
+  /* Apple's radii are larger than they look; the pill is the button. */
+  --radius-lg: 20px;
   --radius: 14px;
-  --radius-sm: 9px;
-  --radius-xs: 5px;
+  --radius-sm: 10px;
+  --radius-xs: 6px;
 
   --gap-xs: 0.375rem;
-  --gap-sm: 0.625rem;
-  --gap: 1rem;
-  --gap-lg: 1.75rem;
-  --gap-xl: 2.75rem;
+  --gap-sm: 0.7rem;
+  --gap: 1.15rem;
+  --gap-lg: 2.25rem;
+  --gap-xl: 4rem;
 
-  --display: "Bricolage", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --display: var(--font);
   --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 
-  --shadow: 0 1px 2px rgba(20, 22, 28, 0.05), 0 4px 16px -6px rgba(20, 22, 28, 0.09);
+  /* Two shadows, layered: a tight contact shadow and a wide soft one. A
+     single blur reads as a sticker. */
+  --shadow: 0 1px 2px rgba(20, 22, 28, 0.04), 0 8px 28px -12px rgba(20, 22, 28, 0.12);
+  --shadow-lift: 0 2px 4px rgba(20, 22, 28, 0.05), 0 16px 44px -16px rgba(20, 22, 28, 0.18);
+
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --veil: rgba(251, 251, 253, 0.72);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0d0f13;
-    --bg-deep: #08090c;
-    --surface: #151820;
-    --surface-sunk: #1c202a;
-    --border: #272c37;
-    --border-strong: #3b4250;
+    --bg: #000000;
+    --bg-deep: #0a0a0c;
+    --surface: #16161a;
+    --surface-sunk: #1d1d22;
+    --border: #2a2a30;
+    --border-strong: #3d3d45;
 
-    --text: #edeef1;
-    --text-muted: #a3a8b3;
-    --text-faint: #767c88;
+    --text: #f5f5f7;
+    --text-muted: #a9a9b0;
+    --text-faint: #7c7c85;
 
-    --accent: #f2ae4c;
-    --accent-bright: #ffc06a;
-    --accent-soft: #2a2013;
-    --accent-line: #5c4626;
+    --accent: #f0b357;
+    --accent-bright: #ffc571;
+    --accent-soft: #241c10;
+    --accent-line: #4d3a1c;
 
-    --live: #ff6b5e;
-    --live-glow: rgba(255, 107, 94, 0.4);
+    --live: #ff5f56;
+    --live-glow: rgba(255, 95, 86, 0.4);
 
-    --task: #5fd6a0;
-    --task-soft: #10281e;
-    --fact: #7db6e8;
-    --fact-soft: #11212f;
+    --task: #4fc08a;
+    --task-soft: #12241c;
+    --fact: #6fa8dc;
+    --fact-soft: #121e2a;
 
-    --bad: #f4938c;
-    --bad-soft: #2b1716;
+    --bad: #ff6b63;
+    --bad-soft: #251314;
 
-    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -10px rgba(0, 0, 0, 0.6);
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 28px -12px rgba(0, 0, 0, 0.7);
+    --shadow-lift: 0 2px 4px rgba(0, 0, 0, 0.55), 0 16px 44px -16px rgba(0, 0, 0, 0.8);
+    --veil: rgba(0, 0, 0, 0.72);
   }
 }
 
@@ -112,193 +116,186 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font);
-  font-size: 16px;
-  line-height: 1.55;
+  font-size: 17px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .app-shell {
-  max-width: 700px;
+  max-width: 60rem;
   margin: 0 auto;
   padding: var(--gap-lg) var(--gap) var(--gap-xl);
-  min-height: 100vh;
 }
 
-@media (min-width: 640px) {
-  .app-shell { padding: var(--gap-xl) var(--gap-lg); }
-}
-
-/* Screens fade up on entry. One quiet transition, not a sequence — the
-   orchestrated moment in this app is task capture, and it shouldn't have
-   to compete with page chrome. */
 .screen {
   display: flex;
   flex-direction: column;
   gap: var(--gap);
-  animation: screen-in 260ms cubic-bezier(0.2, 0.7, 0.3, 1);
+  animation: rise 420ms var(--ease) both;
 }
 
-@keyframes screen-in {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: none; }
+@keyframes rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
 }
 
 /* ---------- type ---------- */
 
+/* Negative tracking is what makes large type read as designed rather than
+   merely big; it scales with size, so it's set per level. */
 h1 {
-  font-family: var(--display);
-  font-size: clamp(1.85rem, 7vw, 2.6rem);
-  font-weight: 800;
-  letter-spacing: -0.035em;
-  line-height: 1.02;
+  font-size: clamp(2.1rem, 6vw, 3.4rem);
+  font-weight: 650;
+  line-height: 1.06;
+  letter-spacing: -0.032em;
   margin: 0;
   text-wrap: balance;
 }
 
 h2 {
+  font-size: 0.72rem;
+  font-weight: 600;
   font-family: var(--mono);
-  font-size: 0.7rem;
-  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.13em;
+  letter-spacing: 0.12em;
   color: var(--text-faint);
   margin: 0;
-  display: flex;
-  align-items: center;
-  gap: var(--gap-sm);
-}
-
-/* Hairline trailing off a section label — reads as instrumentation
-   rather than decoration. */
-h2::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: var(--border);
 }
 
 p { margin: 0; }
 
 .subtitle {
+  font-size: clamp(1.05rem, 2.2vw, 1.24rem);
+  line-height: 1.45;
+  letter-spacing: -0.011em;
   color: var(--text-muted);
-  font-size: 1.02rem;
-  max-width: 44ch;
-  text-wrap: pretty;
+  max-width: 34em;
 }
 
 .hint {
+  font-size: 0.92rem;
+  line-height: 1.55;
   color: var(--text-faint);
-  font-size: 0.9rem;
+  max-width: 40em;
 }
 
 code {
   font-family: var(--mono);
-  font-size: 0.82em;
+  font-size: 0.86em;
   background: var(--surface-sunk);
   border-radius: var(--radius-xs);
-  padding: 0.12em 0.38em;
-  overflow-wrap: anywhere;
-}
-
-.count {
-  font-family: var(--mono);
-  font-size: 0.78rem;
-  color: var(--accent);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0;
+  padding: 0.12em 0.4em;
 }
 
 /* ---------- controls ---------- */
-
-button {
-  font: inherit;
-  font-weight: 560;
-  letter-spacing: -0.005em;
-  cursor: pointer;
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  padding: 0.72rem 1.3rem;
-  min-height: 46px;
-  background: var(--text);
-  color: var(--bg);
-  transition: transform 120ms ease, opacity 120ms ease, background 120ms ease;
-}
-
-button:hover:not(:disabled) { opacity: 0.87; }
-button:active:not(:disabled) { transform: translateY(1px); }
-
-button:disabled {
-  background: var(--border);
-  color: var(--text-faint);
-  cursor: not-allowed;
-}
-
-button.secondary {
-  background: transparent;
-  color: var(--text);
-  border-color: var(--border-strong);
-}
-
-button.secondary:hover:not(:disabled) {
-  background: var(--surface-sunk);
-  opacity: 1;
-}
-
-button.danger {
-  background: var(--live);
-  color: #fff;
-}
-
-:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
 
 .controls-row {
   display: flex;
   flex-wrap: wrap;
   gap: var(--gap-sm);
+  align-items: center;
   margin-top: var(--gap-xs);
 }
 
-@media (max-width: 480px) {
-  .controls-row { flex-direction: column; align-items: stretch; }
+button {
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 550;
+  letter-spacing: -0.011em;
+  color: var(--bg);
+  background: var(--text);
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 0.72rem 1.5rem;
+  min-height: 44px;
+  cursor: pointer;
+  transition: transform 160ms var(--ease), background 160ms var(--ease),
+    border-color 160ms var(--ease), opacity 160ms var(--ease);
 }
 
-/* ---------- instrument bar (live session status) ---------- */
+button:hover { transform: translateY(-1px); }
+button:active { transform: translateY(0) scale(0.985); }
+button:focus-visible { outline: 2px solid var(--accent-bright); outline-offset: 3px; }
+button:disabled { opacity: 0.45; cursor: default; transform: none; }
+
+.secondary {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+.secondary:hover { background: var(--surface-sunk); }
+
+.danger {
+  background: var(--live);
+  color: #fff;
+}
+
+/* ---------- home ---------- */
+
+/* The one place the layout is composed rather than stacked: a landing
+   moment, with air above the headline and the primary action isolated. */
+.home {
+  gap: var(--gap-lg);
+  padding: clamp(1rem, 7vh, 4.5rem) 0 var(--gap-lg);
+}
+
+.home h1 { max-width: 14ch; }
+.home .subtitle { font-size: clamp(1.1rem, 2.4vw, 1.35rem); }
+
+.home .controls-row { margin-top: var(--gap-sm); }
+
+/* Three claims under the fold-line, set small and quiet so the headline
+   keeps the weight. Each is a fact about the built system, not a slogan. */
+.home-points {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: var(--gap);
+  padding-top: var(--gap-lg);
+  border-top: 1px solid var(--border);
+}
+
+.home-points div { display: flex; flex-direction: column; gap: 0.3rem; }
+
+.home-points strong {
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.home-points span {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--text-faint);
+}
+
+/* ---------- instrument bar ---------- */
 
 .instrument {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: var(--gap-sm) var(--gap);
+  gap: var(--gap-sm);
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 0.6rem 0.85rem;
+  border-radius: var(--radius);
+  padding: 0.65rem 0.9rem;
   font-family: var(--mono);
-  font-size: 0.74rem;
-  letter-spacing: 0.04em;
-  color: var(--text-muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
   box-shadow: var(--shadow);
 }
 
-.instrument .rec {
-  display: flex;
-  align-items: center;
-  gap: var(--gap-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  font-weight: 500;
-  color: var(--text-faint);
-}
+.instrument .spacer { flex: 1; }
 
-.instrument .rec.on { color: var(--live); }
+.rec { display: inline-flex; align-items: center; gap: 0.5rem; }
+.rec.on { color: var(--live); }
 
 .status-dot {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background: var(--border-strong);
   flex: none;
@@ -306,105 +303,81 @@ button.danger {
 
 .status-dot.live {
   background: var(--live);
-  animation: pulse 1.9s ease-in-out infinite;
+  box-shadow: 0 0 0 0 var(--live-glow);
+  animation: beacon 2s var(--ease) infinite;
 }
 
-@keyframes pulse {
-  0%, 100% { box-shadow: 0 0 0 0 var(--live-glow); }
-  55% { box-shadow: 0 0 0 7px transparent; }
+@keyframes beacon {
+  0%   { box-shadow: 0 0 0 0 var(--live-glow); }
+  70%  { box-shadow: 0 0 0 7px rgba(0, 0, 0, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(0, 0, 0, 0); }
 }
 
-.instrument .spacer { flex: 1; }
+.source-tag {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+  white-space: nowrap;
+  font-size: 0.68rem;
+}
+
+/* Tinted only once the other participant's audio is really flowing — a tab
+   shared without audio must not look like success. */
+.source-tag.on {
+  color: var(--accent);
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+}
 
 /* ---------- transcript ---------- */
 
 .transcript-box {
-  min-height: 190px;
-  max-height: 40vh;
-  overflow-y: auto;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: var(--gap) var(--gap-lg) var(--gap) var(--gap);
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  line-height: 1.72;
-  font-size: 1.02rem;
+  padding: var(--gap);
+  min-height: 11rem;
+  max-height: 26rem;
+  overflow-y: auto;
+  line-height: 1.6;
   box-shadow: var(--shadow);
-  scrollbar-width: thin;
 }
 
-.transcript-box .interim {
-  color: var(--text-faint);
-  font-style: italic;
-}
-
-.transcript-box .placeholder { color: var(--text-faint); }
-
-/* ---------- records (tasks / facts) ---------- */
-
-.tray {
-  display: flex;
-  flex-direction: column;
-  gap: var(--gap-sm);
-}
-
-.records {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--gap-xs);
-}
-
-/* A record, not a bullet: tag on the left, content on the right. This is
-   the product's whole argument made visible — structured entries instead
-   of a paragraph. */
-.records li {
+.transcript-box .line {
   display: grid;
-  grid-template-columns: auto 1fr;
-  gap: var(--gap-sm);
+  grid-template-columns: 3.6rem 1fr;
+  gap: 0.75rem;
   align-items: baseline;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 0.65rem 0.8rem;
-  box-shadow: var(--shadow);
-  animation: record-in 300ms cubic-bezier(0.2, 0.8, 0.25, 1) backwards;
+  margin-bottom: 0.6rem;
+  animation: rise 300ms var(--ease) both;
 }
 
-.records li .tag {
+.transcript-box .line .who {
   font-family: var(--mono);
-  font-size: 0.6rem;
+  font-size: 0.63rem;
   text-transform: uppercase;
-  letter-spacing: 0.09em;
-  padding: 0.14rem 0.36rem;
-  border-radius: var(--radius-xs);
-  white-space: nowrap;
-  font-weight: 500;
+  letter-spacing: 0.1em;
+  color: var(--text-faint);
+  text-align: right;
 }
 
-.records.is-task li .tag { color: var(--task); background: var(--task-soft); }
-.records.is-fact li .tag { color: var(--fact); background: var(--fact-soft); }
-.records.is-live li .tag { color: var(--accent); background: var(--accent-soft); }
-
-/* The one orchestrated moment in the app: a task appearing mid-sentence,
-   unprompted. It should read as the app doing something. */
-@keyframes record-in {
-  from { opacity: 0; transform: translateY(-8px) scale(0.98); }
-  to { opacity: 1; transform: none; }
-}
+/* The other participant carries the accent: in a record of your own
+   meeting, their words are the ones you scan for. */
+.transcript-box .line.them .who { color: var(--accent); }
+.transcript-box .line.you { color: var(--text-muted); }
+.transcript-box .line.them { color: var(--text); }
+.interim-line { opacity: 0.7; }
+.interim { color: var(--text-faint); font-style: italic; }
+.placeholder { color: var(--text-faint); }
 
 /* ---------- messages ---------- */
 
 .error-banner,
-.notice,
-.saved-note {
-  border-radius: var(--radius-sm);
-  padding: 0.7rem 0.9rem;
-  font-size: 0.9rem;
-  overflow-wrap: anywhere;
+.notice {
+  border-radius: var(--radius);
+  padding: 0.85rem 1.05rem;
+  font-size: 0.94rem;
+  line-height: 1.55;
   border: 1px solid;
 }
 
@@ -420,221 +393,39 @@ button.danger {
   color: var(--accent);
 }
 
-.saved-note {
-  background: var(--surface);
-  border-color: var(--border);
-  color: var(--text-muted);
-  font-family: var(--mono);
-  font-size: 0.74rem;
-  letter-spacing: 0.02em;
+.share-prompt {
   display: flex;
+  align-items: center;
+  gap: var(--gap-sm);
   flex-wrap: wrap;
-  gap: 0.15rem 0.5rem;
-  align-items: baseline;
+  justify-content: space-between;
 }
 
-.saved-note .ok { color: var(--task); }
-
-/* ---------- recall ---------- */
-
-.recall-form { display: flex; gap: var(--gap-sm); }
-
-@media (max-width: 480px) {
-  .recall-form { flex-direction: column; }
-}
-
-.recall-form input {
-  flex: 1;
-  font: inherit;
-  min-height: 46px;
-  padding: 0.65rem 0.9rem;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  color: var(--text);
-  min-width: 0;
-  box-shadow: var(--shadow);
-}
-
-.recall-form input::placeholder { color: var(--text-faint); }
-
-.recall-answer {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: var(--gap) var(--gap-lg) var(--gap) var(--gap);
-  box-shadow: var(--shadow);
-  animation: screen-in 300ms cubic-bezier(0.2, 0.7, 0.3, 1);
-}
-
-.recall-meta {
-  margin-top: var(--gap);
-  padding-top: var(--gap-sm);
-  border-top: 1px solid var(--border);
-  color: var(--text-faint);
-  font-family: var(--mono);
-  font-size: 0.7rem;
-  letter-spacing: 0.03em;
-}
-
-.suggestions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--gap-xs);
-}
-
-.suggestions button {
-  min-height: 0;
-  padding: 0.32rem 0.65rem;
-  font-size: 0.8rem;
-  font-weight: 450;
-  background: transparent;
-  color: var(--text-muted);
-  border: 1px dashed var(--border-strong);
-  border-radius: 999px;
-}
-
-.suggestions button:hover:not(:disabled) {
-  background: var(--surface);
-  color: var(--text);
-  opacity: 1;
-}
-
-/* ---------- rendered markdown (components/Markdown.jsx) ---------- */
-
-.md > *:first-child { margin-top: 0; }
-.md > *:last-child { margin-bottom: 0; }
-
-.md-heading {
-  font-family: var(--display);
-  font-size: 0.98rem;
-  font-weight: 700;
-  letter-spacing: -0.015em;
-  margin: var(--gap) 0 var(--gap-xs);
-  color: var(--text);
-}
-
-.md-para { margin: 0 0 var(--gap-sm); line-height: 1.65; }
-
-.md-list {
-  margin: 0 0 var(--gap-sm);
-  padding-left: 1.1rem;
-  line-height: 1.65;
-}
-
-.md-list li { margin-bottom: 0.32rem; }
-.md-list li::marker { color: var(--accent); }
-
-/* ---------- disclosure ---------- */
-
-details { font-size: 0.9rem; }
-
-details > summary {
-  cursor: pointer;
-  color: var(--text-muted);
-  padding: 0.35rem 0;
-  min-height: 32px;
-  font-family: var(--mono);
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  list-style: none;
-}
-
-details > summary::-webkit-details-marker { display: none; }
-
-details > summary::before {
-  content: "+ ";
-  color: var(--accent);
-}
-
-details[open] > summary::before { content: "− "; }
-
-details > summary:hover { color: var(--text); }
-
-details[open] > summary { margin-bottom: var(--gap-sm); }
-
-/* ---------- motion ---------- */
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation: none !important;
-    transition: none !important;
-  }
-}
-
-/* ---------- speaker-labelled transcript ---------- */
-
-.source-tag {
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 0.16rem 0.55rem;
-  color: var(--text-faint);
-  white-space: nowrap;
-  font-size: 0.68rem;
-  font-family: var(--mono);
-}
-
-/* Only tinted once the other participant's audio is actually flowing — the
-   likeliest failure is a tab shared without its audio, and that should look
-   different from a working capture rather than identical. */
-.source-tag.on {
-  color: var(--accent);
-  border-color: var(--accent-line);
-  background: var(--accent-soft);
-}
-
-.transcript-box .line {
-  margin: 0 0 0.55rem;
-  display: grid;
-  grid-template-columns: 3.4rem 1fr;
-  gap: 0.6rem;
-  align-items: baseline;
-}
-
-.transcript-box .line .who {
-  font-family: var(--mono);
-  font-size: 0.64rem;
-  text-transform: uppercase;
-  letter-spacing: 0.11em;
-  color: var(--text-faint);
-  text-align: right;
-}
-
-/* The other participant is the accent colour, not the user — in a recording
-   of your own meeting, their words are the ones you scan for. */
-.transcript-box .line.them .who { color: var(--accent); }
-.transcript-box .line.them { color: var(--text); }
-.transcript-box .line.you { color: var(--text-dim, var(--text)); }
-.transcript-box .interim-line { opacity: 0.75; }
-
-/* ---------- long-running work ---------- */
+.share-prompt button { font-size: 0.88rem; padding: 0.5rem 1.05rem; min-height: 38px; }
 
 .working {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 0.7rem;
+  gap: 0.75rem;
   align-items: start;
   background: var(--surface-sunk);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 0.85rem 1rem;
-  color: var(--text-faint);
-  font-size: 0.92rem;
-  line-height: 1.5;
+  padding: 0.9rem 1.05rem;
+  color: var(--text-muted);
+  font-size: 0.94rem;
+  line-height: 1.55;
 }
 
-/* A pulse rather than a spinner: the work is one long request with no
-   progress to report, and a spinning ring implies progress we can't measure. */
+/* A pulse, not a spinner: this is one long request with no progress to
+   report, and a spinning ring implies progress we can't measure. */
 .working .pulse {
   width: 9px;
   height: 9px;
-  margin-top: 0.42rem;
+  margin-top: 0.45rem;
   border-radius: 50%;
   background: var(--accent);
-  animation: work-pulse 1.6s ease-in-out infinite;
+  animation: work-pulse 1.6s var(--ease) infinite;
 }
 
 @keyframes work-pulse {
@@ -642,117 +433,7 @@ details[open] > summary { margin-bottom: var(--gap-sm); }
   50%      { opacity: 1;    transform: scale(1); }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .working .pulse { animation: none; opacity: 0.8; }
-}
-
-/* ---------- session review (master–detail) ---------- */
-
-.review-split {
-  display: grid;
-  grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
-  gap: var(--gap);
-  align-items: start;
-}
-
-.session-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--gap-sm);
-  max-height: 60vh;
-  overflow-y: auto;
-  padding-right: 0.25rem;
-}
-
-.day-group { display: flex; flex-direction: column; gap: 0.2rem; }
-
-.day-group h2 {
-  font-family: var(--mono);
-  font-size: 0.64rem;
-  text-transform: uppercase;
-  letter-spacing: 0.13em;
-  color: var(--text-faint);
-  margin: 0.5rem 0 0.25rem;
-}
-
-/* Reset the button defaults rather than fighting them per-property later. */
-.session-item {
-  all: unset;
-  display: flex;
-  flex-direction: column;
-  gap: 0.12rem;
-  cursor: pointer;
-  padding: 0.55rem 0.7rem;
-  border-radius: var(--radius-sm);
-  border-left: 2px solid transparent;
-  transition: background 120ms ease, border-color 120ms ease;
-}
-
-.session-item:hover { background: var(--surface-sunk); }
-.session-item:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-
-/* The accent rail marks the open session — the one place in this list where
-   colour carries state rather than decoration. */
-.session-item.is-selected {
-  background: var(--surface-sunk);
-  border-left-color: var(--accent);
-}
-
-.session-label {
-  font-size: 0.9rem;
-  line-height: 1.35;
-  color: var(--text);
-}
-
-.session-meta {
-  font-family: var(--mono);
-  font-size: 0.68rem;
-  color: var(--text-faint);
-}
-
-.session-detail {
-  display: flex;
-  flex-direction: column;
-  gap: var(--gap-sm);
-  min-width: 0;
-}
-
-.detail-date {
-  font-family: var(--mono);
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--text-faint);
-  margin: 0;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--border);
-}
-
-.detail-summary { color: var(--text); }
-
-/* Only meaningful in the single-column layout, where the list is replaced
-   rather than sitting alongside. */
-.back-to-list { display: none; }
-
-@media (max-width: 760px) {
-  .review-split { grid-template-columns: minmax(0, 1fr); }
-  .session-list { max-height: none; }
-  /* One column means one thing at a time: showing a session hides the list. */
-  .review.has-selection .session-list { display: none; }
-  .review:not(.has-selection) .session-detail { display: none; }
-  .back-to-list {
-    display: inline-flex;
-    all: unset;
-    cursor: pointer;
-    font-family: var(--mono);
-    font-size: 0.72rem;
-    color: var(--accent);
-    padding: 0.3rem 0;
-  }
-  .back-to-list:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-}
-
-/* ---------- pre-flight (before capture starts) ---------- */
+/* ---------- pre-flight ---------- */
 
 .preflight {
   margin: 0;
@@ -761,14 +442,14 @@ details[open] > summary { margin-bottom: var(--gap-sm); }
   counter-reset: step;
   display: flex;
   flex-direction: column;
-  gap: var(--gap-sm);
+  gap: var(--gap);
 }
 
 .preflight li {
   counter-increment: step;
   display: grid;
-  grid-template-columns: 1.65rem 1fr;
-  gap: 0.75rem;
+  grid-template-columns: 1.8rem 1fr;
+  gap: 0.85rem;
   align-items: start;
   line-height: 1.55;
 }
@@ -778,10 +459,10 @@ details[open] > summary { margin-bottom: var(--gap-sm); }
   font-family: var(--mono);
   font-size: 0.72rem;
   color: var(--text-faint);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   border-radius: 50%;
-  width: 1.55rem;
-  height: 1.55rem;
+  width: 1.7rem;
+  height: 1.7rem;
   display: grid;
   place-items: center;
 }
@@ -789,22 +470,266 @@ details[open] > summary { margin-bottom: var(--gap-sm); }
 /* The one instruction that decides whether the feature works at all. */
 .emphasis-note {
   display: block;
-  margin-top: 0.35rem;
-  padding-left: 0.7rem;
-  border-left: 2px solid var(--accent-line);
-  color: var(--text-faint);
-  font-size: 0.88rem;
+  margin-top: 0.4rem;
+  padding-left: 0.8rem;
+  border-left: 2px solid var(--accent);
+  color: var(--text-muted);
+  font-size: 0.9rem;
 }
 
-.share-prompt {
+/* ---------- records ---------- */
+
+.tray { display: flex; flex-direction: column; gap: var(--gap-sm); }
+
+.tray h2 { display: flex; align-items: center; gap: 0.55rem; }
+
+.count {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  color: var(--text-faint);
+  background: var(--surface-sunk);
+  border-radius: 999px;
+  padding: 0.06rem 0.42rem;
+  letter-spacing: 0;
+}
+
+.records { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
+
+.records li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.7rem;
+  align-items: baseline;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 0.75rem 0.9rem;
+  line-height: 1.5;
+  animation: rise 340ms var(--ease) both;
+}
+
+/* One list, one object: only the outer corners round. */
+.records li:first-child { border-radius: var(--radius) var(--radius) 0 0; }
+.records li:last-child { border-radius: 0 0 var(--radius) var(--radius); }
+.records li:only-child { border-radius: var(--radius); }
+.records li + li { border-top: none; }
+
+.tag {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  border-radius: var(--radius-xs);
+  padding: 0.18rem 0.4rem;
+  white-space: nowrap;
+}
+
+.records.is-task .tag { color: var(--task); background: var(--task-soft); }
+.records.is-fact .tag { color: var(--fact); background: var(--fact-soft); }
+.records.is-live .tag { color: var(--accent); background: var(--accent-soft); }
+
+/* ---------- summary ---------- */
+
+.saved-note {
   display: flex;
   align-items: center;
-  gap: var(--gap-sm);
+  gap: 0.7rem;
   flex-wrap: wrap;
-  justify-content: space-between;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--text-faint);
+  background: var(--surface-sunk);
+  border-radius: var(--radius);
+  padding: 0.6rem 0.9rem;
 }
 
-.share-prompt button {
-  font-size: 0.85rem;
-  padding: 0.4rem 0.85rem;
+.saved-note .ok { color: var(--task); }
+
+details {
+  border-top: 1px solid var(--border);
+  padding-top: var(--gap-sm);
+}
+
+details summary {
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.11em;
+  color: var(--text-faint);
+  list-style: none;
+}
+
+details summary::-webkit-details-marker { display: none; }
+details summary::before { content: "+ "; color: var(--accent); }
+details[open] summary::before { content: "− "; }
+details summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+details > *:not(summary) { margin-top: var(--gap-sm); }
+
+/* ---------- recall ---------- */
+
+.recall-form { display: flex; gap: var(--gap-sm); flex-wrap: wrap; }
+
+.recall-form input {
+  flex: 1;
+  min-width: 14rem;
+  font-family: inherit;
+  font-size: 1rem;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  padding: 0.72rem 1.2rem;
+  min-height: 44px;
+  transition: border-color 160ms var(--ease), box-shadow 160ms var(--ease);
+}
+
+.recall-form input::placeholder { color: var(--text-faint); }
+
+.recall-form input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.suggestions { display: flex; flex-wrap: wrap; gap: var(--gap-xs); }
+
+.suggestions button {
+  background: var(--surface);
+  color: var(--text-muted);
+  border-color: var(--border);
+  font-size: 0.88rem;
+  font-weight: 450;
+  padding: 0.48rem 1rem;
+  min-height: 38px;
+}
+
+.suggestions button:hover { color: var(--text); border-color: var(--border-strong); }
+
+.recall-answer {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--gap) var(--gap) var(--gap-sm);
+  box-shadow: var(--shadow);
+}
+
+.recall-meta {
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-faint);
+  margin-top: var(--gap-sm);
+  padding-top: var(--gap-sm);
+  border-top: 1px solid var(--border);
+}
+
+/* ---------- markdown ---------- */
+
+.md { display: flex; flex-direction: column; gap: 0.7rem; }
+.md-heading { font-size: 0.72rem; font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-faint); margin: 0.3rem 0 0; }
+.md-para { margin: 0; line-height: 1.6; }
+.md-list { margin: 0; padding-left: 1.15rem; display: flex; flex-direction: column; gap: 0.35rem; }
+.md-list li::marker { color: var(--accent); }
+
+/* ---------- session review ---------- */
+
+.review-split {
+  display: grid;
+  grid-template-columns: minmax(0, 16rem) minmax(0, 1fr);
+  gap: var(--gap-lg);
+  align-items: start;
+}
+
+.session-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-xs);
+  max-height: 62vh;
+  overflow-y: auto;
+  padding-right: 0.3rem;
+}
+
+.day-group { display: flex; flex-direction: column; gap: 0.15rem; }
+
+.day-group h2 { margin: var(--gap-sm) 0 0.3rem; }
+
+.session-item {
+  all: unset;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  cursor: pointer;
+  padding: 0.62rem 0.75rem;
+  border-radius: var(--radius-sm);
+  border-left: 2px solid transparent;
+  transition: background 160ms var(--ease), border-color 160ms var(--ease);
+}
+
+.session-item:hover { background: var(--surface-sunk); }
+.session-item:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* The accent rail marks the open session — the one place in this list where
+   colour carries state rather than decoration. */
+.session-item.is-selected {
+  background: var(--surface-sunk);
+  border-left-color: var(--accent);
+}
+
+.session-label { font-size: 0.92rem; line-height: 1.4; letter-spacing: -0.008em; color: var(--text); }
+.session-meta { font-family: var(--mono); font-size: 0.66rem; color: var(--text-faint); }
+
+.session-detail { display: flex; flex-direction: column; gap: var(--gap); min-width: 0; }
+
+.detail-date {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-faint);
+  padding-bottom: var(--gap-sm);
+  border-bottom: 1px solid var(--border);
+}
+
+.detail-summary { line-height: 1.6; }
+
+/* Only meaningful in the single-column layout, where the list is replaced
+   rather than sitting alongside. */
+.back-to-list { display: none; }
+
+/* ---------- responsive ---------- */
+
+@media (max-width: 760px) {
+  .review-split { grid-template-columns: minmax(0, 1fr); gap: var(--gap); }
+  .session-list { max-height: none; }
+  /* One column means one thing at a time. */
+  .review.has-selection .session-list { display: none; }
+  .review:not(.has-selection) .session-detail { display: none; }
+  .back-to-list {
+    all: unset;
+    display: inline-flex;
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    padding: 0.35rem 0;
+  }
+  .back-to-list:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+}
+
+@media (max-width: 560px) {
+  body { font-size: 16px; }
+  .app-shell { padding: var(--gap) var(--gap) var(--gap-lg); }
+  .transcript-box .line { grid-template-columns: 3rem 1fr; gap: 0.55rem; }
+  .controls-row button { flex: 1 1 auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }
