@@ -141,7 +141,13 @@ export class LiveTranscriber {
 
   async _openSession(resumeHandle = null) {
     const { token, model } = await this.getToken()
-    const client = new GoogleGenAI({ apiKey: token })
+    // apiVersion v1alpha is required, not optional: ephemeral tokens only
+    // exist on that version, and the SDK warns that omitting it leaves the
+    // client pointed at an endpoint the token isn't valid for.
+    const client = new GoogleGenAI({
+      apiKey: token,
+      httpOptions: { apiVersion: 'v1alpha' },
+    })
 
     const session = { handle: null, open: false }
 
@@ -152,11 +158,15 @@ export class LiveTranscriber {
         // Empty list means automatic language detection.
         inputAudioTranscription: { languageCodes: [] },
         // Lets a replacement socket pick up where this one left off instead
-        // of starting cold. `transparent` makes the server report how much of
-        // our input it consumed, which is what makes a seamless swap possible.
-        sessionResumption: resumeHandle
-          ? { handle: resumeHandle, transparent: true }
-          : { transparent: true },
+        // of starting cold. An empty object still opts in — the server issues
+        // resumption handles, we just aren't restoring one yet.
+        //
+        // Deliberately no `transparent: true`: it's rejected outright in
+        // Developer API mode (it only exists on the Enterprise/Vertex
+        // platform), and it would only have given us
+        // lastConsumedClientMessageIndex, which nothing here reads. The
+        // overlapping handover covers the same gap without it.
+        sessionResumption: resumeHandle ? { handle: resumeHandle } : {},
       },
       callbacks: {
         onopen: () => {
