@@ -16,7 +16,8 @@ This is not a transcription tool. Competitors (Fireflies, Granola, Fathom, Otter
 ## The One Loop (this is the entire prototype — nothing more)
 
 1. User starts a session.
-2. User speaks → live transcript renders (Web Speech API, browser-native, no server round-trip).
+2. User speaks → live transcript renders. Both sides of a call are captured: the
+   microphone, and the other participant via the shared meeting tab.
 3. User says a wake phrase ("Hey Coworker, remind me to...") → a task is created and appears in the task tray immediately.
 4. User ends the session.
 5. Backend sends the full transcript once to the LLM, gets back structured JSON (`summary`, `tasks`, `facts`).
@@ -30,13 +31,35 @@ If that loop works reliably end-to-end, the prototype is done. Do not add anythi
 | Layer | Technology |
 |---|---|
 | Frontend | React |
-| Audio / live transcript | Web Speech API (browser-native) |
+| Audio / live transcript | **`gemini-3.5-transcribe-live`** over a WebSocket, straight from the browser. Web Speech API is kept as a fallback. |
 | Backend | FastAPI |
 | AI | **GPT-5 is the locked default.** For local dev/testing without API cost, the user may swap in the **Gemini API free tier** (`gemini-2.0-flash` or `gemini-2.5-flash`) using its `response_schema` structured-output mode to enforce the same `{summary, tasks, facts}` JSON contract. If you're not sure which is currently wired up, check `backend/.env` for which API key is set (`OPENAI_API_KEY` vs `GEMINI_API_KEY`) rather than assuming. Keep the prompt/response contract identical either way so swapping providers is a one-file change. |
 | Database | Supabase |
-| Deployment | Local prototype only — no hosting needed |
+| Deployment | Frontend on Vercel (static Vite build), backend on Render. `/api/*` is rewritten to the backend so every call is same-origin. |
 
 Do not introduce a different framework, database, or AI provider than what's above without the user explicitly asking for it.
+
+> **Deviations from the original locked stack**, all with explicit sign-off.
+> Recorded here rather than silently rewritten, so the reasoning survives:
+>
+> - **Transcription moved from Web Speech to `gemini-3.5-transcribe-live`.**
+>   The Web Speech API only ever listens to the default microphone and accepts
+>   no audio stream, so the other participant on a call — whose voice comes out
+>   of the speakers — could never be captured. That made half of every meeting
+>   unrecordable. It also does its own internal mic capture, which meant we
+>   could not set `echoCancellation` and therefore could not solve echo at the
+>   source. Web Speech is retained as a fallback for when the live engine can't
+>   start at all, so a rate limit doesn't cost the whole meeting.
+>
+> - **The Gemini model names in the AI row are stale.** `gemini-2.0-flash` and
+>   `gemini-2.5-flash` are both retired for new API keys (the API 404s). The
+>   build uses `gemini-3.6-flash`, verified against the live API with this exact
+>   `{summary, tasks, facts}` schema. See the note at the top of `backend/ai.py`.
+>
+> - **Deployment is no longer local-only.** The app is a PWA meant to be
+>   installed from a home screen, which requires it to work without a laptop
+>   running. This does mean the hosted instance is public and unauthenticated —
+>   see the warning in README.md. Demo data only.
 
 ## Folder Structure
 
@@ -85,7 +108,7 @@ Keep responsibilities separated. Don't create new top-level folders without a re
 
 **During the meeting**, only two things run live:
 1. Continuous live transcription.
-2. Wake-phrase detection on the transcript stream (simple string/regex match — this is NOT a second LLM call running continuously).
+2. Wake-phrase detection on the transcript stream (simple string/regex match — this is NOT a second LLM call running continuously). It scans the **microphone stream only**: "Hey Coworker" is an instruction from the user, so the other participant can't put tasks in your tray.
 
 Nothing else runs continuously. No per-sentence AI calls, no background extraction loop.
 
@@ -128,7 +151,12 @@ Do not build these. If asked to add one, remind the user it's outside the locked
 
 - Always-on listening
 - Email / calendar / Slack / CRM integrations
-- Speaker diarization / speaker identification
+- Speaker diarization / speaker identification — **partially crossed, deliberately.**
+  Transcripts are now labelled `You:` / `Them:`, but this is *not* diarization:
+  the two speakers arrive as two separately-captured audio streams (microphone
+  and shared tab) and each is tagged at its source. No model infers who is
+  speaking. Telling apart two voices *within one stream* — several people in a
+  room on one microphone — remains out of scope and still needs a real model.
 - Authentication / multi-user accounts
 - Desktop background agent
 - WASAPI / CoreAudio
