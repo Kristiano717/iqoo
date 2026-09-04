@@ -65,6 +65,24 @@ export async function summarizeSession(sessionId) {
   return res.json() // { summary, tasks, facts }
 }
 
+export async function fetchSessions() {
+  const res = await fetch(`${API_BASE}/sessions`)
+  if (!res.ok) {
+    const body = await res.text()
+    throw new Error(`Could not load sessions (${res.status}): ${body}`)
+  }
+  return res.json() // [{ id, timestamp, summary, task_count, fact_count }]
+}
+
+export async function fetchSession(id) {
+  const res = await fetch(`${API_BASE}/sessions/${id}`)
+  if (!res.ok) {
+    const body = await res.text()
+    throw new Error(`Could not load that session (${res.status}): ${body}`)
+  }
+  return res.json() // { id, timestamp, summary, facts, transcript, tasks }
+}
+
 export async function askRecall(question) {
   const res = await fetch(`${API_BASE}/recall`, {
     method: 'POST',

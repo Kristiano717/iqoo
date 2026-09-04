@@ -50,7 +50,30 @@ export default function Summary({ session, onRestart, onRecall }) {
 
       {taskSaveError && <div className="error-banner">Task save failed: {taskSaveError}</div>}
 
-      {aiState === 'loading' && <p className="subtitle">Generating summary…</p>}
+      {/* Extraction is a single call that can take the better part of a
+          minute. Everything already known — the wake-phrase tasks and the
+          transcript — is rendered immediately, in the position the final
+          results will occupy, so the screen fills in rather than sitting
+          empty. A bare spinner over a blank page reads as a hang. */}
+      {aiState === 'loading' && (
+        <>
+          <div className="working">
+            <span className="pulse" aria-hidden="true" />
+            <span>
+              Reading the transcript for decisions, tasks and facts. This runs once per
+              session and can take up to a minute.
+            </span>
+          </div>
+          {liveTasks.length > 0 && (
+            <Records
+              items={liveTasks}
+              kind="live"
+              label="Tasks captured live"
+              empty="None yet."
+            />
+          )}
+        </>
+      )}
       {aiState === 'error' && <div className="error-banner">Summary generation failed: {aiError}</div>}
 
       {aiState === 'done' && (
@@ -62,7 +85,7 @@ export default function Summary({ session, onRestart, onRecall }) {
         </>
       )}
 
-      {liveTasks.length > 0 && (
+      {aiState === 'done' && liveTasks.length > 0 && (
         <details>
           <summary>Captured live by wake phrase ({liveTasks.length})</summary>
           <ul className="records is-live">

@@ -23,6 +23,11 @@ from db import get_client
 # fixed window keeps the prompt bounded and the demo deterministic.
 RECALL_SESSION_LIMIT = 10
 
+# How many sessions the review screen lists. Separate from the recall limit
+# on purpose: recall is bounded by what fits usefully in a prompt, this is
+# bounded by what's pleasant to scroll.
+SESSION_LIST_LIMIT = 50
+
 app = FastAPI(title="Second Coworker API")
 
 # Requests normally reach this app same-origin — via Vite's /api proxy in
@@ -176,6 +181,90 @@ def summarize_session(session_id: str):
         raise HTTPException(status_code=502, detail=f"Failed to save extracted tasks: {exc}")
 
     return extracted
+
+
+@app.get("/sessions")
+def list_sessions():
+    """Past sessions, newest first, for the review screen.
+
+    Deliberately does not select `transcript`. It's by far the largest
+    column and the list only needs a label and some counts — pulling every
+    transcript to render a sidebar would grow the payload with the length
+    of every meeting ever recorded.
+    """
+    try:
+        rows = (
+            get_client()
+            .table("sessions")
+            .select("id,timestamp,summary,facts")
+            .order("timestamp", desc=True)
+            .limit(SESSION_LIST_LIMIT)
+            .execute()
+        ).data
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Failed to load sessions: {exc}")
+
+    # One query for every task, counted in Python, rather than a count query
+    # per session — at this scale the round trips cost far more than the rows.
+    ids = [r["id"] for r in rows]
+    task_counts: dict[str, int] = {}
+    if ids:
+        try:
+            task_rows = (
+                get_client().table("tasks").select("session_id").in_("session_id", ids).execute()
+            ).data
+            for t in task_rows:
+                task_counts[t["session_id"]] = task_counts.get(t["session_id"], 0) + 1
+        except Exception as exc:
+            raise HTTPException(status_code=502, detail=f"Failed to count tasks: {exc}")
+
+    return [
+        {
+            "id": r["id"],
+            "timestamp": r["timestamp"],
+            "summary": r.get("summary"),
+            "task_count": task_counts.get(r["id"], 0),
+            "fact_count": len(r.get("facts") or []),
+        }
+        for r in rows
+    ]
+
+
+@app.get("/sessions/{session_id}")
+def get_session(session_id: str):
+    """One session in full, including its transcript and stored tasks."""
+    try:
+        session = (
+            get_client()
+            .table("sessions")
+            .select("id,timestamp,summary,facts,transcript")
+            .eq("id", session_id)
+            .single()
+            .execute()
+        ).data
+    except Exception as exc:
+        raise HTTPException(status_code=404, detail=f"Session not found: {exc}")
+
+    try:
+        tasks = (
+            get_client()
+            .table("tasks")
+            .select("text,timestamp")
+            .eq("session_id", session_id)
+            .order("timestamp")
+            .execute()
+        ).data
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Failed to load tasks: {exc}")
+
+    return {
+        "id": session["id"],
+        "timestamp": session["timestamp"],
+        "summary": session.get("summary"),
+        "facts": session.get("facts") or [],
+        "transcript": session.get("transcript") or "",
+        "tasks": [t["text"] for t in tasks],
+    }
 
 
 class RecallRequest(BaseModel):
